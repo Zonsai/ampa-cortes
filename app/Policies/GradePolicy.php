@@ -50,4 +50,20 @@ class GradePolicy
     {
         return $user->hasPermissionTo('manage settings');
     }
+
+    public function deleteAny(User $user): bool
+    {
+        // Bulk delete cascades to classrooms and enrollments. super_admin bypasses via before().
+        return false;
+    }
+
+    public function restoreAny(User $user): bool
+    {
+        return $user->hasPermissionTo('manage settings');
+    }
+
+    public function forceDeleteAny(User $user): bool
+    {
+        return false;
+    }
 }

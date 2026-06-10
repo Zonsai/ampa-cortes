@@ -2,7 +2,12 @@
 
 namespace App\Filament\Resources\Classrooms\Schemas;
 
+use App\Models\AcademicYear;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rules\Unique;
 
 class ClassroomForm
 {
@@ -10,25 +15,32 @@ class ClassroomForm
     {
         return $schema
             ->components([
-                \Filament\Forms\Components\Select::make('academic_year_id')
+                Select::make('academic_year_id')
                     ->label('Curso escolar')
                     ->relationship('academicYear', 'name')
                     ->required()
-                    ->default(fn () => \App\Models\AcademicYear::where('is_active', true)->value('id'))
+                    ->default(fn () => AcademicYear::where('is_active', true)->value('id'))
                     ->searchable()
                     ->preload(),
-                \Filament\Forms\Components\Select::make('grade_id')
+                Select::make('grade_id')
                     ->label('Curso/nivel')
                     ->relationship('grade', 'name')
                     ->required()
                     ->searchable()
                     ->preload(),
-                \Filament\Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->label('Grupo')
                     ->required()
                     ->maxLength(10)
-                    ->placeholder('A'),
-                \Filament\Forms\Components\TextInput::make('tutor')
+                    ->placeholder('A')
+                    ->unique(
+                        ignoreRecord: true,
+                        modifyRuleUsing: function (Unique $rule, Get $get) {
+                            return $rule->where('academic_year_id', $get('academic_year_id'))
+                                ->where('grade_id', $get('grade_id'));
+                        }
+                    ),
+                TextInput::make('tutor')
                     ->label('Tutor/a docente')
                     ->maxLength(100),
             ]);

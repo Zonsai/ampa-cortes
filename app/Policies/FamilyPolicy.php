@@ -50,4 +50,19 @@ class FamilyPolicy
     {
         return $user->hasRole('junta_ampa');
     }
+
+    public function deleteAny(User $user): bool
+    {
+        return $user->hasPermissionTo('delete families');
+    }
+
+    public function restoreAny(User $user): bool
+    {
+        return $user->hasPermissionTo('edit families');
+    }
+
+    public function forceDeleteAny(User $user): bool
+    {
+        return false;
+    }
 }

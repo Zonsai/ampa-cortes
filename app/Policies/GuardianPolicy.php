@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Guardian;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class GuardianPolicy
 {
@@ -46,5 +45,20 @@ class GuardianPolicy
     public function forceDelete(User $user, Guardian $guardian): bool
     {
         return $user->hasRole('junta_ampa');
+    }
+
+    public function deleteAny(User $user): bool
+    {
+        return $user->hasPermissionTo('delete guardians');
+    }
+
+    public function restoreAny(User $user): bool
+    {
+        return $user->hasPermissionTo('delete guardians');
+    }
+
+    public function forceDeleteAny(User $user): bool
+    {
+        return false;
     }
 }

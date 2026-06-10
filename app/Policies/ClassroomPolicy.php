@@ -50,4 +50,19 @@ class ClassroomPolicy
     {
         return $user->hasPermissionTo('manage settings');
     }
+
+    public function deleteAny(User $user): bool
+    {
+        return $user->hasPermissionTo('manage settings');
+    }
+
+    public function restoreAny(User $user): bool
+    {
+        return $user->hasPermissionTo('manage settings');
+    }
+
+    public function forceDeleteAny(User $user): bool
+    {
+        return false;
+    }
 }

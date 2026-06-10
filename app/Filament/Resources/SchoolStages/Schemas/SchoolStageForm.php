@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SchoolStages\Schemas;
 
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 class SchoolStageForm
@@ -10,12 +11,13 @@ class SchoolStageForm
     {
         return $schema
             ->components([
-                \Filament\Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->label('Nombre de la etapa')
                     ->required()
                     ->maxLength(60)
-                    ->placeholder('Infantil'),
-                \Filament\Forms\Components\TextInput::make('sort_order')
+                    ->placeholder('Infantil')
+                    ->unique(ignoreRecord: true),
+                TextInput::make('sort_order')
                     ->label('Orden')
                     ->numeric()
                     ->default(0),

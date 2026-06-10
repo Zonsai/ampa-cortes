@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -17,7 +16,10 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             AdminUserSeeder::class,
             AcademicYearSeeder::class,
-            DemoDataSeeder::class,
         ]);
+
+        if (app()->environment('local')) {
+            $this->call(DemoDataSeeder::class);
+        }
     }
 }
