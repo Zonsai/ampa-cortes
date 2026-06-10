@@ -1,6 +1,8 @@
 /.phpunit.cache
 /node_modules
 /.claude/settings.local.json
+/.claude/skills/
+/.junie/
 /public/build
 /public/hot
 /public/storage
