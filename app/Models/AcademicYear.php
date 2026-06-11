@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\AcademicYearFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AcademicYear extends Model
 {
-    /** @use HasFactory<\Database\Factories\AcademicYearFactory> */
+    /** @use HasFactory<AcademicYearFactory> */
     use HasFactory;
 
     protected $fillable = ['name', 'starts_at', 'ends_at', 'is_active'];
@@ -24,5 +25,10 @@ class AcademicYear extends Model
     public function classrooms()
     {
         return $this->hasMany(Classroom::class);
+    }
+
+    public function extracurricularActivities()
+    {
+        return $this->hasMany(ExtracurricularActivity::class);
     }
 }

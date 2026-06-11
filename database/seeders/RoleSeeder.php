@@ -5,12 +5,13 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
             // Families
@@ -23,6 +24,10 @@ class RoleSeeder extends Seeder
             'view reports',
             // Settings (AcademicYear, SchoolStage, Grade, Classroom)
             'manage settings',
+            // Extracurricular activities & groups
+            'view extracurricular activities', 'manage extracurricular activities',
+            // Enrollments
+            'view enrollments', 'manage enrollments', 'delete enrollments',
         ];
 
         foreach ($permissions as $permission) {
@@ -38,12 +43,16 @@ class RoleSeeder extends Seeder
         // junta_ampa: full CRUD on all Phase 1 entities + settings
         $juntaAmpa->syncPermissions(Permission::all());
 
-        // admin_extraescolares: read-only in Phase 1
+        // admin_extraescolares: full extraescolares access + read people; no delete enrollments
         $adminExtraescolares->syncPermissions([
             'view families',
             'view guardians',
             'view students',
             'view reports',
+            'view extracurricular activities',
+            'manage extracurricular activities',
+            'view enrollments',
+            'manage enrollments',
         ]);
 
         // admin_formularios: read-only on people entities

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\StudentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Student extends Model
 {
-    /** @use HasFactory<\Database\Factories\StudentFactory> */
+    /** @use HasFactory<StudentFactory> */
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
@@ -49,5 +50,10 @@ class Student extends Model
         return $this->classrooms()
             ->whereHas('academicYear', fn ($q) => $q->where('is_active', true))
             ->first();
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
     }
 }
