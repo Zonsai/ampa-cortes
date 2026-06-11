@@ -31,4 +31,9 @@ class AcademicYear extends Model
     {
         return $this->hasMany(ExtracurricularActivity::class);
     }
+
+    public function forms()
+    {
+        return $this->hasMany(Form::class);
+    }
 }

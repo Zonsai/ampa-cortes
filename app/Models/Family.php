@@ -36,4 +36,9 @@ class Family extends Model
     {
         return $this->hasMany(Enrollment::class);
     }
+
+    public function formResponses()
+    {
+        return $this->hasMany(FormResponse::class);
+    }
 }
