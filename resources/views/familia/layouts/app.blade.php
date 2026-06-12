@@ -48,6 +48,10 @@
                class="@if(request()->routeIs('familia.activities.*')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
                 Extraescolares
             </a>
+            <a href="{{ route('familia.forms.index') }}"
+               class="@if(request()->routeIs('familia.forms.*')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
+                Formularios
+            </a>
         </nav>
         @endauth
     </header>

@@ -5,6 +5,8 @@ use App\Http\Controllers\Familia\AuthController;
 use App\Http\Controllers\Familia\ChildrenController;
 use App\Http\Controllers\Familia\DashboardController;
 use App\Http\Controllers\Familia\EnrollmentController;
+use App\Http\Controllers\Familia\FormResponseController;
+use App\Http\Controllers\Familia\FormsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('familia')->name('familia.')->group(function () {
@@ -22,5 +24,11 @@ Route::prefix('familia')->name('familia.')->group(function () {
         Route::get('/extraescolares/{activity}', [ActivitiesController::class, 'show'])->name('activities.show');
         Route::post('/inscribir', [EnrollmentController::class, 'store'])->name('enroll');
         Route::post('/inscripciones/{enrollment}/cancelar', [EnrollmentController::class, 'cancel'])->name('enrollment.cancel');
+
+        Route::get('/formularios', [FormsController::class, 'index'])->name('forms.index');
+        Route::get('/formularios/{form}', [FormsController::class, 'show'])->name('forms.show');
+        Route::post('/formularios/{form}/responder', [FormResponseController::class, 'store'])->name('forms.submit');
+        Route::get('/formularios/{form}/respuestas/{response}/editar', [FormResponseController::class, 'edit'])->name('forms.edit');
+        Route::put('/formularios/{form}/respuestas/{response}', [FormResponseController::class, 'update'])->name('forms.update');
     });
 });
