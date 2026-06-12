@@ -3,6 +3,7 @@
 use App\Http\Controllers\Familia\ActivitiesController;
 use App\Http\Controllers\Familia\AuthController;
 use App\Http\Controllers\Familia\ChildrenController;
+use App\Http\Controllers\Familia\ConsentController;
 use App\Http\Controllers\Familia\DashboardController;
 use App\Http\Controllers\Familia\EnrollmentController;
 use App\Http\Controllers\Familia\FormResponseController;
@@ -30,5 +31,11 @@ Route::prefix('familia')->name('familia.')->group(function () {
         Route::post('/formularios/{form}/responder', [FormResponseController::class, 'store'])->name('forms.submit');
         Route::get('/formularios/{form}/respuestas/{response}/editar', [FormResponseController::class, 'edit'])->name('forms.edit');
         Route::put('/formularios/{form}/respuestas/{response}', [FormResponseController::class, 'update'])->name('forms.update');
+
+        Route::get('/consentimientos', [ConsentController::class, 'index'])->name('consents.index');
+        Route::get('/consentimientos/{response}', [ConsentController::class, 'show'])->name('consents.show');
+        Route::post('/consentimientos/{response}/aceptar', [ConsentController::class, 'aceptar'])->name('consents.accept');
+        Route::post('/consentimientos/{response}/rechazar', [ConsentController::class, 'rechazar'])->name('consents.reject');
+        Route::post('/consentimientos/{response}/revocar', [ConsentController::class, 'revocar'])->name('consents.revoke');
     });
 });

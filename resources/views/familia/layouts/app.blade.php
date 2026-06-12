@@ -52,6 +52,18 @@
                class="@if(request()->routeIs('familia.forms.*')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
                 Formularios
             </a>
+            @php
+                $pendingConsentsCount = auth()->user()?->family
+                    ? app(\App\Services\ConsentStatusService::class)->getPendingForFamily(auth()->user()->family)->count()
+                    : 0;
+            @endphp
+            <a href="{{ route('familia.consents.index') }}"
+               class="inline-flex items-center gap-1 @if(request()->routeIs('familia.consents.*')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
+                Consentimientos
+                @if($pendingConsentsCount > 0)
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">{{ $pendingConsentsCount }}</span>
+                @endif
+            </a>
         </nav>
         @endauth
     </header>
