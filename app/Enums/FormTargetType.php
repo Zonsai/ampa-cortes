@@ -2,6 +2,11 @@
 
 namespace App\Enums;
 
+use App\Models\ActivityGroup;
+use App\Models\Classroom;
+use App\Models\ExtracurricularActivity;
+use App\Models\Grade;
+use App\Models\SchoolStage;
 use Filament\Support\Contracts\HasLabel;
 
 enum FormTargetType: string implements HasLabel
@@ -36,5 +41,18 @@ enum FormTargetType: string implements HasLabel
     public function requiresTargetItems(): bool
     {
         return ! in_array($this, [self::AllFamilies, self::AmpaMembers]);
+    }
+
+    /** Returns the Eloquent model class to use for morph relationships, or null for non-targeted types. */
+    public function morphClass(): ?string
+    {
+        return match ($this) {
+            self::ByStage => SchoolStage::class,
+            self::ByGrade => Grade::class,
+            self::ByClassroom => Classroom::class,
+            self::ByActivity => ExtracurricularActivity::class,
+            self::ByGroup => ActivityGroup::class,
+            default => null,
+        };
     }
 }
