@@ -61,4 +61,9 @@ class Student extends Model
     {
         return $this->hasMany(FormResponse::class);
     }
+
+    public function consentResponses()
+    {
+        return $this->hasMany(ConsentResponse::class);
+    }
 }
