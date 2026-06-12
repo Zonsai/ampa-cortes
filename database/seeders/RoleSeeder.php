@@ -30,6 +30,8 @@ class RoleSeeder extends Seeder
             'view enrollments', 'manage enrollments', 'delete enrollments',
             // Forms & surveys
             'view forms', 'manage forms',
+            // Consents
+            'view consents', 'manage consents',
         ];
 
         foreach ($permissions as $permission) {
@@ -57,13 +59,15 @@ class RoleSeeder extends Seeder
             'manage enrollments',
         ]);
 
-        // admin_formularios: manage forms + read-only on people entities
+        // admin_formularios: manage forms + consents + read-only on people entities
         $adminFormularios->syncPermissions([
             'view families',
             'view guardians',
             'view students',
             'view forms',
             'manage forms',
+            'view consents',
+            'manage consents',
         ]);
 
         // familia: no permissions in Phase 1 (portal familiar is future scope)

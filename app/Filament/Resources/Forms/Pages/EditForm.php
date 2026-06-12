@@ -4,6 +4,9 @@ namespace App\Filament\Resources\Forms\Pages;
 
 use App\Filament\Resources\Forms\FormResource;
 use App\Models\Form;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditForm extends EditRecord
@@ -11,6 +14,15 @@ class EditForm extends EditRecord
     protected static string $resource = FormResource::class;
 
     protected array $pendingTargetItemIds = [];
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            DeleteAction::make(),
+            ForceDeleteAction::make(),
+            RestoreAction::make(),
+        ];
+    }
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
