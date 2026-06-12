@@ -11,11 +11,13 @@ use App\Models\Family;
 use App\Models\Form;
 use App\Models\FormField;
 use App\Models\FormResponse;
+use App\Models\FormResponseAnswer;
 use App\Models\FormTargetItem;
 use App\Models\Grade;
 use App\Models\SchoolStage;
 use App\Models\Student;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -360,5 +362,35 @@ class FormResponseTest extends TestCase
             family: $this->family,
             answers: [],
         );
+    }
+
+    // ─── Fase 4D: unique constraint (1 test) ─────────────────────────────────
+
+    public function test_unique_constraint_prevents_duplicate_answers_for_same_field(): void
+    {
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+        $field = FormField::factory()->create(['form_id' => $form->id]);
+
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $this->family->id,
+            'student_id' => null,
+            'response_key' => "family:{$this->family->id}",
+            'submitted_at' => now(),
+        ]);
+
+        FormResponseAnswer::create([
+            'form_response_id' => $response->id,
+            'form_field_id' => $field->id,
+            'value' => 'Primera respuesta',
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        FormResponseAnswer::create([
+            'form_response_id' => $response->id,
+            'form_field_id' => $field->id,
+            'value' => 'Segunda respuesta duplicada',
+        ]);
     }
 }

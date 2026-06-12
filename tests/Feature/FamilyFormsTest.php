@@ -445,4 +445,48 @@ class FamilyFormsTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasErrors("field_{$field->id}");
     }
+
+    // ─── Fase 4D: form_id mismatch (2 tests) ─────────────────────────────────
+
+    public function test_edit_returns_403_when_response_belongs_to_different_form(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form1 = $this->createOpenForm(['allow_edit' => true]);
+        $form2 = $this->createOpenForm(['allow_edit' => true]);
+
+        $response = FormResponse::create([
+            'form_id' => $form2->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+
+        // response belongs to form2 but URL references form1
+        $this->actingAs($user)
+            ->get(route('familia.forms.edit', [$form1, $response]))
+            ->assertForbidden();
+    }
+
+    public function test_update_returns_403_when_response_belongs_to_different_form(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form1 = $this->createOpenForm(['allow_edit' => true]);
+        $form2 = $this->createOpenForm(['allow_edit' => true]);
+
+        $response = FormResponse::create([
+            'form_id' => $form2->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+
+        // response belongs to form2 but URL references form1
+        $this->actingAs($user)
+            ->put(route('familia.forms.update', [$form1, $response]), ['fields' => []])
+            ->assertForbidden();
+    }
 }

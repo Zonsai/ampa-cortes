@@ -45,6 +45,10 @@ class FormResponseController extends Controller
     {
         $family = $request->user()->family;
 
+        if ($response->form_id !== $form->id) {
+            abort(403);
+        }
+
         if ($response->family_id !== $family->id) {
             abort(403);
         }
@@ -62,6 +66,10 @@ class FormResponseController extends Controller
     public function update(Request $request, Form $form, FormResponse $response)
     {
         $family = $request->user()->family;
+
+        if ($response->form_id !== $form->id) {
+            abort(403);
+        }
 
         if ($response->family_id !== $family->id) {
             abort(403);
