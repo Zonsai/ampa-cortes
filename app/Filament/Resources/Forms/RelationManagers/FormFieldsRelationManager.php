@@ -70,6 +70,7 @@ class FormFieldsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('label')
+            ->modifyQueryUsing(fn ($query) => $query->reorder())
             ->defaultSort('sort_order')
             ->columns([
                 TextColumn::make('sort_order')

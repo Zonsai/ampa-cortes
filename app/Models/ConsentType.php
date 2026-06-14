@@ -38,7 +38,7 @@ class ConsentType extends Model
 
     public function versions(): HasMany
     {
-        return $this->hasMany(ConsentVersion::class)->orderBy('version_number');
+        return $this->hasMany(ConsentVersion::class);
     }
 
     /** Returns the latest published version for this consent type. */
