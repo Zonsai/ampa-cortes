@@ -49,14 +49,35 @@ class PublishNewConsentVersionAction
                 'created_by_id' => $createdBy?->id,
             ]);
 
-            $affectedResponses = ConsentResponse::where('consent_type_id', $type->id)
+            // Pending responses: keep status, update version pointer only.
+            $pendingResponses = ConsentResponse::where('consent_type_id', $type->id)
+                ->where('status', ConsentResponseStatus::Pending->value)
+                ->get();
+
+            foreach ($pendingResponses as $response) {
+                $response->update(['consent_version_id' => $newVersion->id]);
+
+                ConsentHistory::create([
+                    'consent_response_id' => $response->id,
+                    'consent_version_id' => $newVersion->id,
+                    'consent_type_id' => $type->id,
+                    'family_id' => $response->family_id,
+                    'student_id' => $response->student_id,
+                    'event_type' => ConsentEventType::NewVersionRequired,
+                    'performed_by_id' => null,
+                    'notes' => "Nueva versión {$newVersion->version_number} publicada",
+                ]);
+            }
+
+            // Accepted/Rejected: reset to pending against the new version.
+            $respondedResponses = ConsentResponse::where('consent_type_id', $type->id)
                 ->whereIn('status', [
                     ConsentResponseStatus::Accepted->value,
                     ConsentResponseStatus::Rejected->value,
                 ])
                 ->get();
 
-            foreach ($affectedResponses as $response) {
+            foreach ($respondedResponses as $response) {
                 $response->update([
                     'consent_version_id' => $newVersion->id,
                     'status' => ConsentResponseStatus::Pending,
@@ -75,6 +96,8 @@ class PublishNewConsentVersionAction
                     'notes' => "Nueva versión {$newVersion->version_number} publicada",
                 ]);
             }
+
+            // Revoked responses: untouched.
 
             return $newVersion;
         });

@@ -412,6 +412,84 @@ class ConsentTest extends TestCase
         $this->assertEquals(ConsentResponseStatus::Revoked, $response->fresh()->status);
     }
 
+    public function test_publish_new_version_updates_pending_responses_to_new_version(): void
+    {
+        [$type, $version1] = $this->createPublishedTypeWithVersion();
+
+        app(PublishConsentTypeAction::class)->execute($type, $version1);
+
+        $response = ConsentResponse::where('family_id', $this->family->id)->first();
+        // response is pending — do NOT accept or reject it
+
+        $version2 = app(PublishNewConsentVersionAction::class)->execute($type, 'Nuevo texto legal v2');
+
+        $fresh = $response->fresh();
+        $this->assertSame(ConsentResponseStatus::Pending, $fresh->status);
+        $this->assertSame($version2->id, $fresh->consent_version_id);
+
+        $this->assertDatabaseHas('consent_histories', [
+            'consent_response_id' => $response->id,
+            'consent_version_id' => $version2->id,
+            'event_type' => ConsentEventType::NewVersionRequired->value,
+        ]);
+    }
+
+    public function test_publish_new_version_sets_accepted_responses_to_pending_new_version(): void
+    {
+        [$type, $version1] = $this->createPublishedTypeWithVersion();
+
+        app(PublishConsentTypeAction::class)->execute($type, $version1);
+
+        $response = ConsentResponse::where('family_id', $this->family->id)->first();
+        app(AcceptConsentAction::class)->execute($response, $this->family);
+
+        $version2 = app(PublishNewConsentVersionAction::class)->execute($type, 'Nuevo texto legal v2');
+
+        $fresh = $response->fresh();
+        $this->assertSame(ConsentResponseStatus::Pending, $fresh->status);
+        $this->assertSame($version2->id, $fresh->consent_version_id);
+        $this->assertNull($fresh->responded_at);
+    }
+
+    public function test_publish_new_version_sets_rejected_responses_to_pending_new_version(): void
+    {
+        [$type, $version1] = $this->createPublishedTypeWithVersion(['is_rejectable' => true]);
+
+        app(PublishConsentTypeAction::class)->execute($type, $version1);
+
+        $response = ConsentResponse::where('family_id', $this->family->id)->first();
+        app(RejectConsentAction::class)->execute($response, $this->family);
+
+        $version2 = app(PublishNewConsentVersionAction::class)->execute($type, 'Nuevo texto legal v2');
+
+        $fresh = $response->fresh();
+        $this->assertSame(ConsentResponseStatus::Pending, $fresh->status);
+        $this->assertSame($version2->id, $fresh->consent_version_id);
+        $this->assertNull($fresh->responded_at);
+    }
+
+    public function test_publish_new_version_does_not_update_revoked_responses(): void
+    {
+        [$type, $version1] = $this->createPublishedTypeWithVersion();
+
+        app(PublishConsentTypeAction::class)->execute($type, $version1);
+
+        $response = ConsentResponse::where('family_id', $this->family->id)->first();
+        app(AcceptConsentAction::class)->execute($response, $this->family);
+        app(RevokeConsentAction::class)->execute($response->fresh(), $this->family);
+
+        app(PublishNewConsentVersionAction::class)->execute($type, 'Nuevo texto legal v2');
+
+        $fresh = $response->fresh();
+        $this->assertSame(ConsentResponseStatus::Revoked, $fresh->status);
+        $this->assertSame($version1->id, $fresh->consent_version_id);
+
+        $this->assertDatabaseMissing('consent_histories', [
+            'consent_response_id' => $response->id,
+            'event_type' => ConsentEventType::NewVersionRequired->value,
+        ]);
+    }
+
     public function test_accepting_outdated_version_fails(): void
     {
         [$type, $version1] = $this->createPublishedTypeWithVersion();
@@ -420,10 +498,12 @@ class ConsentTest extends TestCase
 
         $response = ConsentResponse::where('family_id', $this->family->id)->first();
 
-        // Publish version 2 — response gets updated to v2 + pending
+        // Publish version 2 — pending response gets updated to v2
         app(PublishNewConsentVersionAction::class)->execute($type, 'Texto versión 2');
 
-        // Simulate race condition: force response back to point at version 1
+        // Refresh the model so Eloquent sees the current DB state (v2), then
+        // simulate a race condition by forcing the version pointer back to v1.
+        $response->refresh();
         $response->update(['consent_version_id' => $version1->id]);
 
         $this->expectException(ValidationException::class);

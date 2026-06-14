@@ -35,6 +35,7 @@ class AcceptConsentAction
                 'responded_by_id' => $performedBy?->id,
                 'ip_address' => $ipAddress,
                 'user_agent' => $userAgent,
+                'revoked_at' => null,
             ]);
 
             ConsentHistory::create([
@@ -78,9 +79,9 @@ class AcceptConsentAction
             ]);
         }
 
-        if ($response->status !== ConsentResponseStatus::Pending) {
+        if (! in_array($response->status, [ConsentResponseStatus::Pending, ConsentResponseStatus::Revoked])) {
             throw ValidationException::withMessages([
-                'consent' => 'Solo puedes aceptar consentimientos pendientes.',
+                'consent' => 'Solo puedes aceptar consentimientos pendientes o previamente revocados.',
             ]);
         }
 

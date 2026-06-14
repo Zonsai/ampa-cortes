@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ConsentEventType;
 use App\Enums\ConsentResponseStatus;
+use App\Models\ConsentHistory;
 use App\Models\ConsentResponse;
 use App\Models\ConsentType;
 use App\Models\ConsentVersion;
@@ -399,6 +401,70 @@ class FamilyConsentsTest extends TestCase
         $this->assertDatabaseMissing('consent_histories', [
             'consent_response_id' => $response->id,
             'event_type' => 'revoked',
+        ]);
+    }
+
+    public function test_family_can_accept_revoked_consent_again(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+        ['type' => $type, 'version' => $version] = $this->createPublishedConsent(['is_revocable' => true]);
+        $response = ConsentResponse::create([
+            'consent_type_id' => $type->id,
+            'consent_version_id' => $version->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'subject_key' => "family:{$family->id}",
+            'status' => ConsentResponseStatus::Revoked,
+            'responded_at' => now()->subDay(),
+            'revoked_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('familia.consents.accept', $response))
+            ->assertRedirect(route('familia.consents.index'))
+            ->assertSessionHas('success', 'Consentimiento aceptado correctamente.');
+
+        $fresh = $response->fresh();
+        $this->assertSame(ConsentResponseStatus::Accepted->value, $fresh->status->value);
+        $this->assertNull($fresh->revoked_at);
+    }
+
+    public function test_accepting_revoked_consent_keeps_previous_revoked_history(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+        ['type' => $type, 'version' => $version] = $this->createPublishedConsent(['is_revocable' => true]);
+        $response = ConsentResponse::create([
+            'consent_type_id' => $type->id,
+            'consent_version_id' => $version->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'subject_key' => "family:{$family->id}",
+            'status' => ConsentResponseStatus::Revoked,
+            'responded_at' => now()->subDay(),
+            'revoked_at' => now(),
+        ]);
+
+        ConsentHistory::create([
+            'consent_response_id' => $response->id,
+            'consent_version_id' => $version->id,
+            'consent_type_id' => $type->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'event_type' => ConsentEventType::Revoked,
+            'performed_by_id' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('familia.consents.accept', $response))
+            ->assertRedirect(route('familia.consents.index'));
+
+        $this->assertDatabaseHas('consent_histories', [
+            'consent_response_id' => $response->id,
+            'event_type' => 'revoked',
+        ]);
+        $this->assertDatabaseHas('consent_histories', [
+            'consent_response_id' => $response->id,
+            'event_type' => 'accepted',
         ]);
     }
 
