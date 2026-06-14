@@ -9,9 +9,13 @@ use App\Enums\FormTargetType;
 use App\Exports\Forms\FormResponsesExport;
 use App\Filament\Resources\Forms\Pages\CreateForm;
 use App\Filament\Resources\Forms\Pages\EditForm;
+use App\Filament\Resources\Forms\RelationManagers\FormResponsesRelationManager;
 use App\Models\AcademicYear;
+use App\Models\Family;
 use App\Models\Form;
 use App\Models\FormField;
+use App\Models\FormResponse;
+use App\Models\FormResponseAnswer;
 use App\Models\Grade;
 use App\Models\SchoolStage;
 use App\Models\User;
@@ -278,5 +282,149 @@ class FormResourceTest extends TestCase
 
         $this->assertCount(0, $export->query()->get());
         $this->assertNotEmpty($export->headings());
+    }
+
+    // ── FormResponsesRelationManager ─────────────────────────────────────────
+
+    public function test_form_responses_relation_manager_renders(): void
+    {
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+
+        $this->actingAs($this->superAdmin);
+
+        Livewire::test(FormResponsesRelationManager::class, [
+            'ownerRecord' => $form,
+            'pageClass' => EditForm::class,
+        ])
+            ->assertOk();
+    }
+
+    public function test_form_responses_relation_manager_shows_response_records(): void
+    {
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+        $family = Family::factory()->create();
+        $response = FormResponse::factory()->create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+        ]);
+
+        $this->actingAs($this->superAdmin);
+
+        Livewire::test(FormResponsesRelationManager::class, [
+            'ownerRecord' => $form,
+            'pageClass' => EditForm::class,
+        ])
+            ->assertOk()
+            ->assertCanSeeTableRecords([$response]);
+    }
+
+    public function test_ver_respuesta_action_exists_in_responses_relation_manager(): void
+    {
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+        $family = Family::factory()->create();
+        FormResponse::factory()->create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+        ]);
+
+        $this->actingAs($this->superAdmin);
+
+        Livewire::test(FormResponsesRelationManager::class, [
+            'ownerRecord' => $form,
+            'pageClass' => EditForm::class,
+        ])
+            ->assertTableActionExists('ver_respuesta');
+    }
+
+    // ── formatAnswerValue helper ──────────────────────────────────────────────
+
+    public function test_format_answer_value_returns_dash_for_null(): void
+    {
+        $this->assertSame('—', FormResponsesRelationManager::formatAnswerValue(null));
+    }
+
+    public function test_format_answer_value_returns_dash_for_empty_string(): void
+    {
+        $this->assertSame('—', FormResponsesRelationManager::formatAnswerValue(''));
+    }
+
+    public function test_format_answer_value_formats_json_array_as_comma_separated(): void
+    {
+        $this->assertSame('Lunes, Miércoles', FormResponsesRelationManager::formatAnswerValue('["Lunes","Miércoles"]'));
+    }
+
+    public function test_format_answer_value_returns_plain_string_unchanged(): void
+    {
+        $this->assertSame('Texto simple', FormResponsesRelationManager::formatAnswerValue('Texto simple'));
+    }
+
+    public function test_info_text_field_type_is_excluded_from_answerable_fields(): void
+    {
+        $this->assertFalse(FormFieldType::InfoText->storesAnswer());
+        $this->assertTrue(FormFieldType::TextShort->storesAnswer());
+        $this->assertTrue(FormFieldType::Checkboxes->storesAnswer());
+    }
+
+    public function test_ver_respuesta_action_modal_opens_with_family_heading(): void
+    {
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+        FormField::factory()->create([
+            'form_id' => $form->id,
+            'label' => 'Alergias conocidas',
+            'type' => FormFieldType::TextShort,
+            'sort_order' => 1,
+        ]);
+        FormField::factory()->infoText()->create([
+            'form_id' => $form->id,
+            'label' => 'Aviso legal informativo',
+            'sort_order' => 2,
+        ]);
+
+        $family = Family::factory()->create(['name' => 'Fernández Ruiz']);
+        $response = FormResponse::factory()->create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+        ]);
+
+        $this->actingAs($this->superAdmin);
+
+        Livewire::test(FormResponsesRelationManager::class, [
+            'ownerRecord' => $form,
+            'pageClass' => EditForm::class,
+        ])
+            ->mountTableAction('ver_respuesta', $response)
+            ->assertSee('Fernández Ruiz'); // appears in modalHeading
+    }
+
+    public function test_ver_respuesta_action_mounts_without_error_for_checkbox_field(): void
+    {
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+        $field = FormField::factory()->checkboxes(['Lunes', 'Martes', 'Miércoles'])->create([
+            'form_id' => $form->id,
+            'label' => 'Días disponibles',
+            'sort_order' => 1,
+        ]);
+
+        $family = Family::factory()->create(['name' => 'García Pérez']);
+        $response = FormResponse::factory()->create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+        ]);
+        FormResponseAnswer::create([
+            'form_response_id' => $response->id,
+            'form_field_id' => $field->id,
+            'value' => '["Lunes","Miércoles"]',
+        ]);
+
+        $this->actingAs($this->superAdmin);
+
+        // Verifies fillForm runs without exception (JSON array decoded in formatAnswerValue).
+        // Formatting logic is covered by test_format_answer_value_formats_json_array_as_comma_separated.
+        Livewire::test(FormResponsesRelationManager::class, [
+            'ownerRecord' => $form,
+            'pageClass' => EditForm::class,
+        ])
+            ->mountTableAction('ver_respuesta', $response)
+            ->assertOk();
     }
 }
