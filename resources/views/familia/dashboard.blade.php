@@ -21,7 +21,7 @@
 </p>
 
 {{-- Avisos calculados --}}
-@if($waitlistCount > 0 || $pendingPaymentCount > 0)
+@if($waitlistCount > 0 || $pendingPaymentCount > 0 || $pendingConsentsCount > 0)
 <div class="mb-6 space-y-2">
     @if($waitlistCount > 0)
         <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-amber-800 text-sm">
@@ -36,6 +36,14 @@
             tienes {{ $pendingPaymentCount }} {{ $pendingPaymentCount === 1 ? 'inscripción' : 'inscripciones' }}
             pendiente{{ $pendingPaymentCount === 1 ? '' : 's' }} de pago.
             Contacta con el AMPA para completarla.
+        </div>
+    @endif
+    @if($pendingConsentsCount > 0)
+        <div class="rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-indigo-800 text-sm">
+            <strong>Consentimientos pendientes:</strong>
+            tienes {{ $pendingConsentsCount }} {{ $pendingConsentsCount === 1 ? 'consentimiento' : 'consentimientos' }}
+            pendiente{{ $pendingConsentsCount === 1 ? '' : 's' }} de revisar.
+            <a href="{{ route('familia.consents.index') }}" class="underline font-medium">Ver consentimientos →</a>
         </div>
     @endif
 </div>
@@ -113,6 +121,16 @@
        class="block bg-white rounded-xl border border-gray-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all group">
         <div class="font-medium text-gray-800 group-hover:text-indigo-700">Extraescolares →</div>
         <div class="text-sm text-gray-500 mt-1">Ver actividades disponibles y solicitar inscripción</div>
+    </a>
+    <a href="{{ route('familia.forms.index') }}"
+       class="block bg-white rounded-xl border border-gray-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all group">
+        <div class="font-medium text-gray-800 group-hover:text-indigo-700">Formularios →</div>
+        <div class="text-sm text-gray-500 mt-1">Consultar y responder formularios del AMPA</div>
+    </a>
+    <a href="{{ route('familia.consents.index') }}"
+       class="block bg-white rounded-xl border border-gray-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all group">
+        <div class="font-medium text-gray-800 group-hover:text-indigo-700">Consentimientos →</div>
+        <div class="text-sm text-gray-500 mt-1">Revisar y gestionar los consentimientos de tu familia</div>
     </a>
 </div>
 

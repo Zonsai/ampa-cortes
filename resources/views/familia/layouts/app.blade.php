@@ -54,7 +54,7 @@
             </a>
             @php
                 $pendingConsentsCount = auth()->user()?->family
-                    ? app(\App\Services\ConsentStatusService::class)->getPendingForFamily(auth()->user()->family)->count()
+                    ? app(\App\Services\ConsentStatusService::class)->countPendingForFamily(auth()->user()->family)
                     : 0;
             @endphp
             <a href="{{ route('familia.consents.index') }}"

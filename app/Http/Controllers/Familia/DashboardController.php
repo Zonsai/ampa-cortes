@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Familia;
 
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
+use App\Services\ConsentStatusService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    public function __construct(private readonly ConsentStatusService $consentStatusService) {}
+
     public function __invoke(Request $request): View
     {
         $family = $request->user()->family;
@@ -27,6 +30,8 @@ class DashboardController extends Controller
 
         $students = $family->students()->where('is_active', true)->get();
 
+        $pendingConsentsCount = $this->consentStatusService->countPendingForFamily($family);
+
         return view('familia.dashboard', compact(
             'family',
             'students',
@@ -34,6 +39,7 @@ class DashboardController extends Controller
             'enrolledCount',
             'waitlistCount',
             'pendingPaymentCount',
+            'pendingConsentsCount',
         ));
     }
 }

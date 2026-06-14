@@ -42,6 +42,13 @@ class ConsentStatusService
             ->exists();
     }
 
+    public function countPendingForFamily(Family $family): int
+    {
+        return ConsentResponse::where('family_id', $family->id)
+            ->where('status', ConsentResponseStatus::Pending)
+            ->count();
+    }
+
     /**
      * Returns all consent responses for a specific student (per_student consents).
      *

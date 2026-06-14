@@ -5,15 +5,20 @@ namespace Tests\Feature;
 use App\Actions\Enrollments\EnrollStudentAction;
 use App\Enums\ActivityGroupStatus;
 use App\Enums\ActivityStatus;
+use App\Enums\ConsentResponseStatus;
 use App\Enums\EnrollmentStatus;
 use App\Models\AcademicYear;
 use App\Models\ActivityGroup;
+use App\Models\ConsentResponse;
+use App\Models\ConsentType;
+use App\Models\ConsentVersion;
 use App\Models\Enrollment;
 use App\Models\ExtracurricularActivity;
 use App\Models\Family;
 use App\Models\Guardian;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\ConsentStatusService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -441,5 +446,81 @@ class FamilyZoneTest extends TestCase
         $response = $this->actingAs($user)->get('/admin');
 
         $response->assertForbidden();
+    }
+
+    // ─── Dashboard consent notice (3 tests) ──────────────────────────────────
+
+    public function test_dashboard_shows_pending_consents_notice_when_pending_exist(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $type = ConsentType::factory()->published()->create();
+        $version = ConsentVersion::factory()->published()->create(['consent_type_id' => $type->id]);
+        ConsentResponse::create([
+            'consent_type_id' => $type->id,
+            'consent_version_id' => $version->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'subject_key' => "family:{$family->id}",
+            'status' => ConsentResponseStatus::Pending,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.dashboard'))
+            ->assertOk()
+            ->assertSee('Consentimientos pendientes');
+    }
+
+    public function test_dashboard_does_not_show_pending_consents_notice_when_none(): void
+    {
+        ['user' => $user] = $this->createFamilyUser();
+
+        $this->actingAs($user)
+            ->get(route('familia.dashboard'))
+            ->assertOk()
+            ->assertDontSee('Consentimientos pendientes');
+    }
+
+    public function test_count_pending_for_family_returns_correct_count(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $type = ConsentType::factory()->published()->create();
+        $version = ConsentVersion::factory()->published()->create(['consent_type_id' => $type->id]);
+
+        ConsentResponse::create([
+            'consent_type_id' => $type->id,
+            'consent_version_id' => $version->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'subject_key' => "family:{$family->id}",
+            'status' => ConsentResponseStatus::Pending,
+        ]);
+
+        $service = app(ConsentStatusService::class);
+
+        $this->assertSame(1, $service->countPendingForFamily($family));
+    }
+
+    // ─── Dashboard quick access links (2 tests) ───────────────────────────────
+
+    public function test_dashboard_shows_quick_access_link_to_forms(): void
+    {
+        ['user' => $user] = $this->createFamilyUser();
+
+        $this->actingAs($user)
+            ->get(route('familia.dashboard'))
+            ->assertOk()
+            ->assertSee(route('familia.forms.index'), false);
+    }
+
+    public function test_dashboard_shows_quick_access_link_to_consents(): void
+    {
+        ['user' => $user] = $this->createFamilyUser();
+
+        $this->actingAs($user)
+            ->get(route('familia.dashboard'))
+            ->assertOk()
+            ->assertSee(route('familia.consents.index'), false);
     }
 }
