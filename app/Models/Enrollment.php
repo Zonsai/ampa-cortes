@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use Database\Factories\EnrollmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +30,8 @@ class Enrollment extends Model
         'waitlist_position',
         'family_notes',
         'internal_notes',
+        'paid_at',
+        'payment_method',
     ];
 
     protected function casts(): array
@@ -39,6 +42,8 @@ class Enrollment extends Model
             'registered_at' => 'datetime',
             'enrolled_at' => 'datetime',
             'ended_at' => 'datetime',
+            'paid_at' => 'datetime',
+            'payment_method' => PaymentMethod::class,
             'amount' => 'decimal:2',
         ];
     }

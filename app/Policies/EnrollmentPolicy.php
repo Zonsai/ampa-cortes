@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Enrollment;
 use App\Models\User;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 class EnrollmentPolicy
 {
@@ -64,5 +65,14 @@ class EnrollmentPolicy
     public function forceDeleteAny(User $user): bool
     {
         return false;
+    }
+
+    public function managePayment(User $user, Enrollment $enrollment): bool
+    {
+        try {
+            return $user->hasPermissionTo('manage payments');
+        } catch (PermissionDoesNotExist) {
+            return false;
+        }
     }
 }

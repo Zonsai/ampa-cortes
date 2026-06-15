@@ -27,7 +27,7 @@ class RoleSeeder extends Seeder
             // Extracurricular activities & groups
             'view extracurricular activities', 'manage extracurricular activities',
             // Enrollments
-            'view enrollments', 'manage enrollments', 'delete enrollments',
+            'view enrollments', 'manage enrollments', 'delete enrollments', 'manage payments',
             // Forms & surveys
             'view forms', 'manage forms',
             // Consents

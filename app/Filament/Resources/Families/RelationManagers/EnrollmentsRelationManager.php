@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Families\RelationManagers;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\PaymentMethod;
 use App\Models\Enrollment;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -50,6 +51,15 @@ class EnrollmentsRelationManager extends RelationManager
                     ->label('Importe')
                     ->money('EUR')
                     ->placeholder('—'),
+                TextColumn::make('paid_at')
+                    ->label('Fecha pago')
+                    ->dateTime('d/m/Y H:i')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('payment_method')
+                    ->label('Método pago')
+                    ->formatStateUsing(fn (?PaymentMethod $state): string => $state?->getLabel() ?? '—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('registered_at')
                     ->label('Fecha solicitud')
                     ->dateTime('d/m/Y H:i')
