@@ -13,6 +13,7 @@ use App\Enums\PaymentMethod;
 use App\Models\AcademicYear;
 use App\Models\Enrollment;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -50,10 +51,6 @@ class EnrollmentsTable
                 TextColumn::make('activityGroup.name')
                     ->label('Grupo')
                     ->sortable(),
-                TextColumn::make('academicYear.name')
-                    ->label('Año académico')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')
                     ->label('Estado')
                     ->badge(),
@@ -61,6 +58,10 @@ class EnrollmentsTable
                     ->label('Importe')
                     ->money('EUR')
                     ->sortable(),
+                TextColumn::make('academicYear.name')
+                    ->label('Año académico')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('price_type')
                     ->label('Tipo precio')
                     ->badge()
@@ -83,7 +84,8 @@ class EnrollmentsTable
                 TextColumn::make('registered_at')
                     ->label('Inscrito')
                     ->date('d/m/Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('registered_at', 'desc')
             ->filters([
@@ -96,33 +98,6 @@ class EnrollmentsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                Action::make('mark_pending_payment')
-                    ->label('Marcar pendiente de pago')
-                    ->icon('heroicon-o-clock')
-                    ->color('info')
-                    ->requiresConfirmation()
-                    ->modalHeading('Marcar como pendiente de pago')
-                    ->modalDescription('La inscripción pasará al estado "Pendiente de pago".')
-                    ->visible(fn (Enrollment $record) => auth()->user()?->can('managePayment', $record)
-                        && $record->status === EnrollmentStatus::Enrolled)
-                    ->action(function (Enrollment $record): void {
-                        if (! auth()->user()?->can('managePayment', $record)) {
-                            Notification::make()->title('Sin permiso')->danger()->send();
-
-                            return;
-                        }
-                        try {
-                            app(MarkPendingPaymentAction::class)->execute($record);
-                            Notification::make()->title('Marcado como pendiente de pago')->success()->send();
-                        } catch (ValidationException $e) {
-                            Notification::make()
-                                ->title('No se pudo actualizar')
-                                ->body(collect($e->errors())->flatten()->first())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
-
                 Action::make('register_payment')
                     ->label('Registrar pago')
                     ->icon('heroicon-o-banknotes')
@@ -168,120 +143,151 @@ class EnrollmentsTable
                         }
                     }),
 
-                Action::make('void_payment')
-                    ->label('Anular pago')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Anular pago')
-                    ->modalDescription('Se anulará el pago registrado y la inscripción volverá a pendiente de pago.')
-                    ->visible(fn (Enrollment $record) => auth()->user()?->can('managePayment', $record)
-                        && $record->status === EnrollmentStatus::Paid)
-                    ->action(function (Enrollment $record): void {
-                        if (! auth()->user()?->can('managePayment', $record)) {
-                            Notification::make()->title('Sin permiso')->danger()->send();
+                ActionGroup::make([
+                    Action::make('mark_pending_payment')
+                        ->label('Pendiente de pago')
+                        ->icon('heroicon-o-clock')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalHeading('Marcar inscripción como pendiente de pago')
+                        ->modalDescription('La familia verá la inscripción como pendiente de pago. No se registrará ningún pago todavía.')
+                        ->visible(fn (Enrollment $record) => auth()->user()?->can('managePayment', $record)
+                            && $record->status === EnrollmentStatus::Enrolled)
+                        ->action(function (Enrollment $record): void {
+                            if (! auth()->user()?->can('managePayment', $record)) {
+                                Notification::make()->title('Sin permiso')->danger()->send();
 
-                            return;
-                        }
-                        try {
-                            app(VoidPaymentAction::class)->execute($record);
-                            Notification::make()->title('Pago anulado')->success()->send();
-                        } catch (ValidationException $e) {
-                            Notification::make()
-                                ->title('No se pudo anular el pago')
-                                ->body(collect($e->errors())->flatten()->first())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
-
-                Action::make('drop')
-                    ->label('Dar de baja')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->visible(fn (Enrollment $record) => in_array($record->status, [
-                        EnrollmentStatus::Enrolled,
-                        EnrollmentStatus::PendingPayment,
-                        EnrollmentStatus::Paid,
-                        EnrollmentStatus::Pending,
-                    ]))
-                    ->action(function (Enrollment $record) {
-                        try {
-                            app(DropEnrollmentAction::class)->execute($record);
-                            $waitlistCount = Enrollment::where('activity_group_id', $record->activity_group_id)
-                                ->where('status', EnrollmentStatus::Waitlist)
-                                ->count();
-                            if ($waitlistCount > 0) {
+                                return;
+                            }
+                            try {
+                                app(MarkPendingPaymentAction::class)->execute($record);
+                                Notification::make()->title('Marcado como pendiente de pago')->success()->send();
+                            } catch (ValidationException $e) {
                                 Notification::make()
-                                    ->title('Hay alumnos/as en lista de espera')
-                                    ->body("Hay {$waitlistCount} ".($waitlistCount === 1 ? 'alumno/a' : 'alumnos/as').' en lista de espera. Usa "Cubrir plaza" para asignar la plaza manualmente.')
-                                    ->info()
-                                    ->persistent()
+                                    ->title('No se pudo actualizar')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
                                     ->send();
                             }
-                        } catch (ValidationException $e) {
-                            Notification::make()
-                                ->title('No se pudo dar de baja')
-                                ->body(collect($e->errors())->flatten()->first())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                        }),
 
-                Action::make('cancel')
-                    ->label('Cancelar')
-                    ->icon('heroicon-o-no-symbol')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->visible(fn (Enrollment $record) => in_array($record->status, [
-                        EnrollmentStatus::Pending,
-                        EnrollmentStatus::Waitlist,
-                    ]))
-                    ->action(function (Enrollment $record) {
-                        try {
-                            app(CancelEnrollmentAction::class)->execute($record);
-                            $waitlistCount = Enrollment::where('activity_group_id', $record->activity_group_id)
-                                ->where('status', EnrollmentStatus::Waitlist)
-                                ->count();
-                            if ($waitlistCount > 0) {
+                    Action::make('void_payment')
+                        ->label('Anular pago')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Anular pago')
+                        ->modalDescription('Se anulará el pago registrado y la inscripción volverá a pendiente de pago.')
+                        ->visible(fn (Enrollment $record) => auth()->user()?->can('managePayment', $record)
+                            && $record->status === EnrollmentStatus::Paid)
+                        ->action(function (Enrollment $record): void {
+                            if (! auth()->user()?->can('managePayment', $record)) {
+                                Notification::make()->title('Sin permiso')->danger()->send();
+
+                                return;
+                            }
+                            try {
+                                app(VoidPaymentAction::class)->execute($record);
+                                Notification::make()->title('Pago anulado')->success()->send();
+                            } catch (ValidationException $e) {
                                 Notification::make()
-                                    ->title('Hay alumnos/as en lista de espera')
-                                    ->body("Hay {$waitlistCount} ".($waitlistCount === 1 ? 'alumno/a' : 'alumnos/as').' en lista de espera. Usa "Cubrir plaza" para asignar la plaza manualmente.')
-                                    ->info()
-                                    ->persistent()
+                                    ->title('No se pudo anular el pago')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
                                     ->send();
                             }
-                        } catch (ValidationException $e) {
-                            Notification::make()
-                                ->title('No se pudo cancelar la inscripción')
-                                ->body(collect($e->errors())->flatten()->first())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                        }),
 
-                Action::make('promote')
-                    ->label('Promover siguiente')
-                    ->icon('heroicon-o-arrow-up-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->visible(fn (Enrollment $record) => $record->status === EnrollmentStatus::Waitlist)
-                    ->action(function (Enrollment $record) {
-                        try {
-                            app(PromoteFromWaitlistAction::class)->execute($record);
-                            Notification::make()
-                                ->title('Inscripción promovida')
-                                ->success()
-                                ->send();
-                        } catch (ValidationException $e) {
-                            Notification::make()
-                                ->title('No se pudo promover')
-                                ->body(collect($e->errors())->flatten()->first())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                    Action::make('drop')
+                        ->label('Dar de baja')
+                        ->icon('heroicon-o-user-minus')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->visible(fn (Enrollment $record) => in_array($record->status, [
+                            EnrollmentStatus::Enrolled,
+                            EnrollmentStatus::PendingPayment,
+                            EnrollmentStatus::Paid,
+                            EnrollmentStatus::Pending,
+                        ]))
+                        ->action(function (Enrollment $record) {
+                            try {
+                                app(DropEnrollmentAction::class)->execute($record);
+                                $waitlistCount = Enrollment::where('activity_group_id', $record->activity_group_id)
+                                    ->where('status', EnrollmentStatus::Waitlist)
+                                    ->count();
+                                if ($waitlistCount > 0) {
+                                    Notification::make()
+                                        ->title('Hay alumnos/as en lista de espera')
+                                        ->body("Hay {$waitlistCount} ".($waitlistCount === 1 ? 'alumno/a' : 'alumnos/as').' en lista de espera. Usa "Pasar a inscrito/a" para inscribirlos manualmente.')
+                                        ->info()
+                                        ->persistent()
+                                        ->send();
+                                }
+                            } catch (ValidationException $e) {
+                                Notification::make()
+                                    ->title('No se pudo dar de baja')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
+
+                    Action::make('cancel')
+                        ->label('Cancelar')
+                        ->icon('heroicon-o-no-symbol')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->visible(fn (Enrollment $record) => in_array($record->status, [
+                            EnrollmentStatus::Pending,
+                            EnrollmentStatus::Waitlist,
+                        ]))
+                        ->action(function (Enrollment $record) {
+                            try {
+                                app(CancelEnrollmentAction::class)->execute($record);
+                                $waitlistCount = Enrollment::where('activity_group_id', $record->activity_group_id)
+                                    ->where('status', EnrollmentStatus::Waitlist)
+                                    ->count();
+                                if ($waitlistCount > 0) {
+                                    Notification::make()
+                                        ->title('Hay alumnos/as en lista de espera')
+                                        ->body("Hay {$waitlistCount} ".($waitlistCount === 1 ? 'alumno/a' : 'alumnos/as').' en lista de espera. Usa "Pasar a inscrito/a" para inscribirlos manualmente.')
+                                        ->info()
+                                        ->persistent()
+                                        ->send();
+                                }
+                            } catch (ValidationException $e) {
+                                Notification::make()
+                                    ->title('No se pudo cancelar la inscripción')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
+
+                    Action::make('promote')
+                        ->label('Pasar a inscrito/a')
+                        ->icon('heroicon-o-arrow-up-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Pasar a inscrito/a')
+                        ->modalDescription('Se inscribirá al alumno/a de esta fila. Solo se aplica a esta inscripción concreta.')
+                        ->visible(fn (Enrollment $record) => $record->status === EnrollmentStatus::Waitlist)
+                        ->action(function (Enrollment $record) {
+                            try {
+                                app(PromoteFromWaitlistAction::class)->execute($record);
+                                Notification::make()
+                                    ->title('Alumno/a inscrito/a correctamente')
+                                    ->success()
+                                    ->send();
+                            } catch (ValidationException $e) {
+                                Notification::make()
+                                    ->title('No se pudo inscribir')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
+                ]),
 
                 EditAction::make(),
             ])

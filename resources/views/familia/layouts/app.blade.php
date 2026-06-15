@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Portal Familias') — AMPA</title>
+    <title>@yield('title', 'Portal Familias') — AMPA Cortés de Aragón</title>
     @if(!app()->environment('testing'))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
@@ -15,7 +15,8 @@
     <header class="bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
             <div>
-                <span class="font-semibold text-gray-800">Portal Familias — AMPA</span>
+                <span class="font-semibold text-gray-800">AMPA Cortés de Aragón</span>
+                <span class="ml-2 text-sm text-gray-400 hidden sm:inline">Portal Familias</span>
                 @auth
                     <span class="ml-2 text-sm text-gray-500">
                         Familia {{ auth()->user()->family?->name }}
@@ -35,21 +36,21 @@
 
         {{-- Navegación --}}
         @auth
-        <nav class="max-w-4xl mx-auto px-4 pb-2 flex gap-4 text-sm">
+        <nav class="max-w-4xl mx-auto px-4 border-t border-gray-100 flex gap-1 text-sm overflow-x-auto">
             <a href="{{ route('familia.dashboard') }}"
-               class="@if(request()->routeIs('familia.dashboard')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
+               class="py-2 px-3 whitespace-nowrap transition-colors @if(request()->routeIs('familia.dashboard')) font-semibold text-indigo-700 border-b-2 border-indigo-600 @else text-gray-600 hover:text-indigo-600 border-b-2 border-transparent @endif">
                 Inicio
             </a>
             <a href="{{ route('familia.children') }}"
-               class="@if(request()->routeIs('familia.children')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
+               class="py-2 px-3 whitespace-nowrap transition-colors @if(request()->routeIs('familia.children')) font-semibold text-indigo-700 border-b-2 border-indigo-600 @else text-gray-600 hover:text-indigo-600 border-b-2 border-transparent @endif">
                 Mis hijos/as
             </a>
             <a href="{{ route('familia.activities.index') }}"
-               class="@if(request()->routeIs('familia.activities.*')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
+               class="py-2 px-3 whitespace-nowrap transition-colors @if(request()->routeIs('familia.activities.*')) font-semibold text-indigo-700 border-b-2 border-indigo-600 @else text-gray-600 hover:text-indigo-600 border-b-2 border-transparent @endif">
                 Extraescolares
             </a>
             <a href="{{ route('familia.forms.index') }}"
-               class="@if(request()->routeIs('familia.forms.*')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
+               class="py-2 px-3 whitespace-nowrap transition-colors @if(request()->routeIs('familia.forms.*')) font-semibold text-indigo-700 border-b-2 border-indigo-600 @else text-gray-600 hover:text-indigo-600 border-b-2 border-transparent @endif">
                 Formularios
             </a>
             @php
@@ -58,7 +59,7 @@
                     : 0;
             @endphp
             <a href="{{ route('familia.consents.index') }}"
-               class="inline-flex items-center gap-1 @if(request()->routeIs('familia.consents.*')) font-semibold text-indigo-700 @else text-gray-600 hover:text-indigo-600 @endif">
+               class="py-2 px-3 whitespace-nowrap inline-flex items-center gap-1 transition-colors @if(request()->routeIs('familia.consents.*')) font-semibold text-indigo-700 border-b-2 border-indigo-600 @else text-gray-600 hover:text-indigo-600 border-b-2 border-transparent @endif">
                 Consentimientos
                 @if($pendingConsentsCount > 0)
                     <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">{{ $pendingConsentsCount }}</span>
