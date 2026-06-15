@@ -22,6 +22,7 @@ class ConsentType extends Model
         'scope',
         'is_rejectable',
         'is_revocable',
+        'requires_image_review',
         'status',
         'sort_order',
     ];
@@ -32,6 +33,7 @@ class ConsentType extends Model
             'scope' => ConsentScope::class,
             'is_rejectable' => 'boolean',
             'is_revocable' => 'boolean',
+            'requires_image_review' => 'boolean',
             'status' => ConsentTypeStatus::class,
         ];
     }

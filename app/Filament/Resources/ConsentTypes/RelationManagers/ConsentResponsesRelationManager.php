@@ -13,6 +13,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ConsentResponsesRelationManager extends RelationManager
 {
@@ -34,6 +35,7 @@ class ConsentResponsesRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('id')
             ->defaultSort('created_at', 'desc')
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('consentType'))
             ->columns([
                 TextColumn::make('family.name')
                     ->label('Familia')
@@ -63,6 +65,17 @@ class ConsentResponsesRelationManager extends RelationManager
                 TextColumn::make('respondedBy.name')
                     ->label('Respondido por')
                     ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('image_review_flag')
+                    ->label('Rev. imagen')
+                    ->getStateUsing(fn (ConsentResponse $record): ?string => $record->status === ConsentResponseStatus::Revoked
+                        && $record->consentType->requires_image_review
+                            ? 'Revisar'
+                            : null
+                    )
+                    ->badge()
+                    ->color('warning')
+                    ->placeholder('')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

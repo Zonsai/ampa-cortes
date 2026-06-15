@@ -6,6 +6,8 @@ use App\Actions\Consents\PublishConsentTypeAction;
 use App\Actions\Consents\PublishNewConsentVersionAction;
 use App\Enums\ConsentScope;
 use App\Enums\ConsentTypeStatus;
+use App\Exports\Consents\ConsentHistoryExport;
+use App\Exports\Consents\ConsentStatusExport;
 use App\Models\ConsentType;
 use App\Models\ConsentVersion;
 use App\Models\User;
@@ -28,6 +30,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ConsentTypesTable
 {
@@ -54,6 +57,11 @@ class ConsentTypesTable
                 IconColumn::make('is_revocable')
                     ->label('Revocable')
                     ->boolean(),
+                IconColumn::make('requires_image_review')
+                    ->label('Rev. imagen')
+                    ->boolean()
+                    ->trueColor('warning')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('versions_count')
                     ->label('Versiones')
                     ->alignCenter(),
@@ -160,6 +168,22 @@ class ConsentTypesTable
                             Notification::make()->title($message)->danger()->send();
                         }
                     }),
+                Action::make('exportar_estado')
+                    ->label('Exportar estado')
+                    ->icon(Heroicon::ArrowDownTray)
+                    ->color('gray')
+                    ->action(fn (ConsentType $record) => Excel::download(
+                        new ConsentStatusExport($record),
+                        'consentimiento-'.str($record->name)->slug().'-estado.xlsx',
+                    )),
+                Action::make('exportar_historico')
+                    ->label('Exportar histórico')
+                    ->icon(Heroicon::Clock)
+                    ->color('gray')
+                    ->action(fn (ConsentType $record) => Excel::download(
+                        new ConsentHistoryExport($record),
+                        'consentimiento-'.str($record->name)->slug().'-historico.xlsx',
+                    )),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

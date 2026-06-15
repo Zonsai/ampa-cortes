@@ -20,6 +20,7 @@ class ConsentTypeFactory extends Factory
             'scope' => ConsentScope::PerFamily,
             'is_rejectable' => true,
             'is_revocable' => true,
+            'requires_image_review' => false,
             'status' => ConsentTypeStatus::Draft,
             'sort_order' => 0,
         ];

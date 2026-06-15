@@ -44,6 +44,11 @@ class ConsentTypeForm
                         Toggle::make('is_revocable')
                             ->label('Permite revocación')
                             ->default(true),
+                        Toggle::make('requires_image_review')
+                            ->label('Requiere revisión de imagen al revocar')
+                            ->default(false)
+                            ->helperText('Si está activado, se dejará una nota interna en el histórico cuando se revoque este consentimiento.')
+                            ->columnSpanFull(),
                     ]),
                 Section::make('Descripción')
                     ->schema([

@@ -13,6 +13,9 @@ use Illuminate\Validation\ValidationException;
 
 class RevokeConsentAction
 {
+    /** Note written to history when the revoked consent type requires image review. */
+    public const IMAGE_REVIEW_NOTE = 'Revocación que requiere revisión de uso de imagen/materiales.';
+
     /**
      * Revokes a previously accepted consent response.
      * History is preserved — this only changes the current status.
@@ -34,6 +37,11 @@ class RevokeConsentAction
                 'revoked_at' => now(),
             ]);
 
+            $response->loadMissing('consentType');
+            $notes = $response->consentType->requires_image_review
+                ? self::IMAGE_REVIEW_NOTE
+                : null;
+
             ConsentHistory::create([
                 'consent_response_id' => $response->id,
                 'consent_version_id' => $response->consent_version_id,
@@ -44,6 +52,7 @@ class RevokeConsentAction
                 'performed_by_id' => $performedBy?->id,
                 'ip_address' => $ipAddress,
                 'user_agent' => $userAgent,
+                'notes' => $notes,
             ]);
 
             return $response->fresh();
