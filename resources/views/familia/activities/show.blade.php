@@ -133,11 +133,17 @@
                                             \App\Enums\EnrollmentStatus::Paid => 'bg-green-100 text-green-800',
                                             \App\Enums\EnrollmentStatus::Waitlist => 'bg-amber-100 text-amber-800',
                                             \App\Enums\EnrollmentStatus::PendingPayment => 'bg-blue-100 text-blue-800',
+                                            \App\Enums\EnrollmentStatus::Pending => 'bg-indigo-100 text-indigo-800',
                                             default => 'bg-gray-100 text-gray-600',
+                                        };
+                                        $statusLabel = match($enrollment->status) {
+                                            \App\Enums\EnrollmentStatus::Pending => 'Solicitud enviada',
+                                            \App\Enums\EnrollmentStatus::Paid => 'Pago registrado',
+                                            default => $enrollment->status->label(),
                                         };
                                     @endphp
                                     <span class="inline-block text-xs px-2 py-0.5 rounded-full {{ $pillClass }}">
-                                        {{ $enrollment->status->label() }}
+                                        {{ $statusLabel }}
                                     </span>
                                     @if(in_array($enrollment->status, [\App\Enums\EnrollmentStatus::Pending, \App\Enums\EnrollmentStatus::Waitlist]))
                                         <form method="POST"
@@ -168,7 +174,7 @@
                                         <input type="hidden" name="activity_group_id" value="{{ $group->id }}">
                                         <button type="submit"
                                                 class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-medium px-3 py-1 rounded-lg transition-colors">
-                                            Lista de espera
+                                            Apuntarse a lista de espera
                                         </button>
                                     </form>
 
@@ -179,7 +185,7 @@
                                         <input type="hidden" name="activity_group_id" value="{{ $group->id }}">
                                         <button type="submit"
                                                 class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3 py-1 rounded-lg transition-colors">
-                                            Solicitar inscripción
+                                            Solicitar plaza
                                         </button>
                                     </form>
                                 @endif

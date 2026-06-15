@@ -143,11 +143,15 @@ class FamilyZoneTest extends TestCase
         ['user' => $userA, 'student' => $studentA] = $this->createFamilyUser();
         ['student' => $studentB] = $this->createFamilyUser();
 
+        // Force deterministic names to prevent Faker collisions between families.
+        $studentA->update(['first_name' => 'PropioQA', 'last_name' => 'AlumnoQA']);
+        $studentB->update(['first_name' => 'AjenoQA', 'last_name' => 'OtraFamiliaQA']);
+
         $response = $this->actingAs($userA)->get(route('familia.children'));
 
         $response->assertOk();
-        $response->assertSee($studentA->first_name);
-        $response->assertDontSee($studentB->first_name);
+        $response->assertSee('PropioQA');
+        $response->assertDontSee('AjenoQA');
     }
 
     public function test_family_cannot_cancel_another_familys_enrollment(): void
@@ -266,11 +270,12 @@ class FamilyZoneTest extends TestCase
             ]);
 
         $response->assertRedirect();
+        // Family requests now create Pending, not Enrolled directly.
         $this->assertDatabaseHas('enrollments', [
             'student_id' => $student->id,
             'family_id' => $family->id,
             'activity_group_id' => $group->id,
-            'status' => EnrollmentStatus::Enrolled->value,
+            'status' => EnrollmentStatus::Pending->value,
         ]);
     }
 

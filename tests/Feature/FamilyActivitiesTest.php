@@ -329,7 +329,7 @@ class FamilyActivitiesTest extends TestCase
         $this->actingAs($user)
             ->get(route('familia.activities.show', $activity))
             ->assertOk()
-            ->assertSee('Pagado');
+            ->assertSee('Pago registrado');
     }
 
     // ─── Eligibility display ─────────────────────────────────────────────────

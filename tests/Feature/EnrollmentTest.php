@@ -247,6 +247,17 @@ class EnrollmentTest extends TestCase
         app(DropEnrollmentAction::class)->execute($waitlisted);
     }
 
+    public function test_drop_fails_on_pending_enrollment(): void
+    {
+        $enrollment = Enrollment::factory()->create([
+            'activity_group_id' => $this->group->id,
+            'status' => EnrollmentStatus::Pending,
+        ]);
+
+        $this->expectException(ValidationException::class);
+        app(DropEnrollmentAction::class)->execute($enrollment);
+    }
+
     // ── CancelEnrollmentAction ────────────────────────────────────────────────
 
     public function test_cancel_transitions_waitlist_to_cancelled(): void

@@ -71,9 +71,16 @@
                                         @if(in_array($enr->status->value, ['enrolled', 'paid'])) text-green-700
                                         @elseif($enr->status->value === 'pending_payment') text-blue-700
                                         @elseif($enr->status->value === 'waitlist') text-amber-700
+                                        @elseif($enr->status->value === 'pending') text-indigo-700
                                         @else text-gray-500
                                         @endif">
-                                        {{ $enr->status->label() }}
+                                        @if($enr->status === \App\Enums\EnrollmentStatus::Pending)
+                                            Solicitud enviada
+                                        @elseif($enr->status === \App\Enums\EnrollmentStatus::Paid)
+                                            Pago registrado
+                                        @else
+                                            {{ $enr->status->label() }}
+                                        @endif
                                     </span>
                                 </div>
                             @endforeach

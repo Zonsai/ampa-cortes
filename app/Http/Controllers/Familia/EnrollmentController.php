@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Familia;
 
 use App\Actions\Enrollments\CancelEnrollmentAction;
-use App\Actions\Enrollments\EnrollFamiliaStudentAction;
+use App\Actions\Enrollments\RequestFamilyEnrollmentAction;
 use App\Enums\ActivityStatus;
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
@@ -47,7 +47,7 @@ class EnrollmentController extends Controller
         $activeYear = AcademicYear::where('is_active', true)->firstOrFail();
 
         try {
-            $enrollment = app(EnrollFamiliaStudentAction::class)->execute(
+            $enrollment = app(RequestFamilyEnrollmentAction::class)->execute(
                 student: $student,
                 group: $group,
                 family: $family,
@@ -56,8 +56,8 @@ class EnrollmentController extends Controller
             );
 
             $message = $enrollment->status === EnrollmentStatus::Waitlist
-                ? 'Has quedado en lista de espera. Te avisaremos si queda una plaza libre.'
-                : '¡Inscripción realizada correctamente!';
+                ? 'Te has apuntado a la lista de espera.'
+                : 'Solicitud enviada. El AMPA revisará la inscripción.';
 
             return redirect()
                 ->route('familia.activities.show', $group->activity_id)

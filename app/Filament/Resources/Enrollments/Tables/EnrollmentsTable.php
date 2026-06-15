@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Enrollments\Tables;
 
 use App\Actions\Enrollments\CancelEnrollmentAction;
+use App\Actions\Enrollments\ConfirmEnrollmentAction;
 use App\Actions\Enrollments\DropEnrollmentAction;
 use App\Actions\Enrollments\MarkPendingPaymentAction;
+use App\Actions\Enrollments\MoveToWaitlistAction;
 use App\Actions\Enrollments\PromoteFromWaitlistAction;
 use App\Actions\Enrollments\RegisterPaymentAction;
 use App\Actions\Enrollments\VoidPaymentAction;
@@ -98,6 +100,32 @@ class EnrollmentsTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('confirm_request')
+                    ->label('Confirmar solicitud')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Confirmar solicitud de inscripción')
+                    ->modalDescription('Se inscribirá al alumno/a en el grupo. Esta acción no se puede deshacer desde el portal familiar.')
+                    ->visible(fn (Enrollment $record) => auth()->user()?->can('update', $record) && $record->status === EnrollmentStatus::Pending)
+                    ->action(function (Enrollment $record): void {
+                        if (! auth()->user()?->can('update', $record)) {
+                            Notification::make()->title('Sin permiso')->danger()->send();
+
+                            return;
+                        }
+                        try {
+                            app(ConfirmEnrollmentAction::class)->execute($record);
+                            Notification::make()->title('Solicitud confirmada')->success()->send();
+                        } catch (ValidationException $e) {
+                            Notification::make()
+                                ->title('No se pudo confirmar')
+                                ->body(collect($e->errors())->flatten()->first())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
                 Action::make('register_payment')
                     ->label('Registrar pago')
                     ->icon('heroicon-o-banknotes')
@@ -144,6 +172,32 @@ class EnrollmentsTable
                     }),
 
                 ActionGroup::make([
+                    Action::make('move_to_waitlist')
+                        ->label('Enviar a lista de espera')
+                        ->icon('heroicon-o-queue-list')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Enviar a lista de espera')
+                        ->modalDescription('La solicitud pasará a lista de espera en lugar de confirmarse.')
+                        ->visible(fn (Enrollment $record) => auth()->user()?->can('update', $record) && $record->status === EnrollmentStatus::Pending)
+                        ->action(function (Enrollment $record): void {
+                            if (! auth()->user()?->can('update', $record)) {
+                                Notification::make()->title('Sin permiso')->danger()->send();
+
+                                return;
+                            }
+                            try {
+                                app(MoveToWaitlistAction::class)->execute($record);
+                                Notification::make()->title('Enviado a lista de espera')->success()->send();
+                            } catch (ValidationException $e) {
+                                Notification::make()
+                                    ->title('No se pudo mover a lista de espera')
+                                    ->body(collect($e->errors())->flatten()->first())
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
+
                     Action::make('mark_pending_payment')
                         ->label('Pendiente de pago')
                         ->icon('heroicon-o-clock')
@@ -207,7 +261,6 @@ class EnrollmentsTable
                             EnrollmentStatus::Enrolled,
                             EnrollmentStatus::PendingPayment,
                             EnrollmentStatus::Paid,
-                            EnrollmentStatus::Pending,
                         ]))
                         ->action(function (Enrollment $record) {
                             if (! auth()->user()?->can('update', $record)) {

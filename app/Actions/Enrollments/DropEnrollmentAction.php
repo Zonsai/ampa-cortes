@@ -21,7 +21,6 @@ class DropEnrollmentAction
                 EnrollmentStatus::Enrolled,
                 EnrollmentStatus::PendingPayment,
                 EnrollmentStatus::Paid,
-                EnrollmentStatus::Pending,
             ];
 
             if (! in_array($enrollment->status, $terminableStatuses)) {
