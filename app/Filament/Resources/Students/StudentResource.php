@@ -5,6 +5,11 @@ namespace App\Filament\Resources\Students;
 use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Filament\Resources\Students\Pages\EditStudent;
 use App\Filament\Resources\Students\Pages\ListStudents;
+use App\Filament\Resources\Students\RelationManagers\ClassroomsRelationManager;
+use App\Filament\Resources\Students\RelationManagers\ConsentResponsesRelationManager;
+use App\Filament\Resources\Students\RelationManagers\EnrollmentsRelationManager;
+use App\Filament\Resources\Students\RelationManagers\FormResponsesRelationManager;
+use App\Filament\Resources\Students\RelationManagers\GuardiansRelationManager;
 use App\Filament\Resources\Students\Schemas\StudentForm;
 use App\Filament\Resources\Students\Tables\StudentsTable;
 use App\Models\Student;
@@ -51,7 +56,11 @@ class StudentResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ClassroomsRelationManager::class,
+            GuardiansRelationManager::class,
+            EnrollmentsRelationManager::class,
+            FormResponsesRelationManager::class,
+            ConsentResponsesRelationManager::class,
         ];
     }
 
