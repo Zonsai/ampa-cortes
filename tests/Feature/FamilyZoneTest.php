@@ -9,13 +9,16 @@ use App\Enums\ConsentResponseStatus;
 use App\Enums\EnrollmentStatus;
 use App\Models\AcademicYear;
 use App\Models\ActivityGroup;
+use App\Models\Classroom;
 use App\Models\ConsentResponse;
 use App\Models\ConsentType;
 use App\Models\ConsentVersion;
 use App\Models\Enrollment;
 use App\Models\ExtracurricularActivity;
 use App\Models\Family;
+use App\Models\Grade;
 use App\Models\Guardian;
+use App\Models\SchoolStage;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\ConsentStatusService;
@@ -52,6 +55,12 @@ class FamilyZoneTest extends TestCase
         $family = Family::factory()->create(['is_ampa_member' => true]);
         Guardian::factory()->create(['user_id' => $user->id, 'family_id' => $family->id]);
         $student = Student::factory()->create(['family_id' => $family->id, 'is_active' => true]);
+
+        // The family portal now requires students to have a classroom in the active year.
+        $stage = SchoolStage::firstOrCreate(['name' => 'General', 'sort_order' => 99]);
+        $grade = Grade::firstOrCreate(['school_stage_id' => $stage->id, 'name' => 'General'], ['sort_order' => 99]);
+        $classroom = Classroom::firstOrCreate(['academic_year_id' => $this->activeYear->id, 'grade_id' => $grade->id, 'name' => 'General']);
+        $student->classrooms()->attach($classroom->id, ['enrolled_at' => now()]);
 
         return compact('user', 'family', 'student');
     }

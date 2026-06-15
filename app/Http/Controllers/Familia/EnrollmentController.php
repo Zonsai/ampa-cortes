@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Familia;
 
 use App\Actions\Enrollments\CancelEnrollmentAction;
-use App\Actions\Enrollments\EnrollStudentAction;
+use App\Actions\Enrollments\EnrollFamiliaStudentAction;
 use App\Enums\ActivityStatus;
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
@@ -47,7 +47,7 @@ class EnrollmentController extends Controller
         $activeYear = AcademicYear::where('is_active', true)->firstOrFail();
 
         try {
-            $enrollment = app(EnrollStudentAction::class)->execute(
+            $enrollment = app(EnrollFamiliaStudentAction::class)->execute(
                 student: $student,
                 group: $group,
                 family: $family,
