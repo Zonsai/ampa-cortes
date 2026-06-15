@@ -26,7 +26,13 @@ class EnrollFamiliaStudentAction
         AcademicYear $academicYear,
         ?string $familyNotes = null,
     ): Enrollment {
-        $group->loadMissing('grades');
+        $group->loadMissing(['grades', 'activity']);
+
+        if ($group->activity->academic_year_id !== $academicYear->id) {
+            throw ValidationException::withMessages([
+                'activity_group_id' => __('Esta actividad no pertenece al curso académico activo.'),
+            ]);
+        }
 
         $classroom = $student->classrooms()
             ->where('academic_year_id', $academicYear->id)

@@ -23,6 +23,12 @@ class EnsureFamiliaRole
                 ->with('error', 'Tu cuenta no está vinculada a ninguna familia. Contacta con el AMPA.');
         }
 
+        // HasOneThrough respects soft deletes; returns null if the family was deleted.
+        if ($request->user()->family === null) {
+            return redirect()->route('familia.login')
+                ->with('error', 'Tu familia no está disponible actualmente. Contacta con el AMPA.');
+        }
+
         return $next($request);
     }
 }

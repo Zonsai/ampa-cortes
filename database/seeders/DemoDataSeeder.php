@@ -15,6 +15,12 @@ class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment('local')) {
+            $this->command?->warn('DemoDataSeeder solo puede ejecutarse en entorno local.');
+
+            return;
+        }
+
         $activeYear = AcademicYear::where('is_active', true)->first();
 
         // School structure

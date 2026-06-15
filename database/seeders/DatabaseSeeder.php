@@ -12,14 +12,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Safe to run in any environment — idempotent, no credentials.
         $this->call([
             RoleSeeder::class,
-            AdminUserSeeder::class,
             AcademicYearSeeder::class,
         ]);
 
+        // Local-only seeders: demo users with known passwords, sample data.
+        // NEVER run these in production.
         if (app()->environment('local')) {
-            $this->call(DemoDataSeeder::class);
+            $this->call([
+                AdminUserSeeder::class,
+                DemoDataSeeder::class,
+            ]);
         }
     }
 }

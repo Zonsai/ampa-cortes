@@ -201,13 +201,18 @@ class EnrollmentsRelationManager extends RelationManager
                         ->icon('heroicon-o-user-minus')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->visible(fn (Enrollment $record) => in_array($record->status, [
+                        ->visible(fn (Enrollment $record) => auth()->user()?->can('update', $record) && in_array($record->status, [
                             EnrollmentStatus::Enrolled,
                             EnrollmentStatus::PendingPayment,
                             EnrollmentStatus::Paid,
                             EnrollmentStatus::Pending,
                         ]))
                         ->action(function (Enrollment $record) {
+                            if (! auth()->user()?->can('update', $record)) {
+                                Notification::make()->title('Sin permiso')->danger()->send();
+
+                                return;
+                            }
                             try {
                                 app(DropEnrollmentAction::class)->execute($record);
                                 $waitlistCount = Enrollment::where('activity_group_id', $record->activity_group_id)
@@ -235,11 +240,16 @@ class EnrollmentsRelationManager extends RelationManager
                         ->icon('heroicon-o-no-symbol')
                         ->color('warning')
                         ->requiresConfirmation()
-                        ->visible(fn (Enrollment $record) => in_array($record->status, [
+                        ->visible(fn (Enrollment $record) => auth()->user()?->can('update', $record) && in_array($record->status, [
                             EnrollmentStatus::Pending,
                             EnrollmentStatus::Waitlist,
                         ]))
                         ->action(function (Enrollment $record) {
+                            if (! auth()->user()?->can('update', $record)) {
+                                Notification::make()->title('Sin permiso')->danger()->send();
+
+                                return;
+                            }
                             try {
                                 app(CancelEnrollmentAction::class)->execute($record);
                                 $waitlistCount = Enrollment::where('activity_group_id', $record->activity_group_id)
@@ -269,8 +279,13 @@ class EnrollmentsRelationManager extends RelationManager
                         ->requiresConfirmation()
                         ->modalHeading('Pasar a inscrito/a')
                         ->modalDescription('Se inscribirá al alumno/a de esta fila. Solo se aplica a esta inscripción concreta.')
-                        ->visible(fn (Enrollment $record) => $record->status === EnrollmentStatus::Waitlist)
+                        ->visible(fn (Enrollment $record) => auth()->user()?->can('update', $record) && $record->status === EnrollmentStatus::Waitlist)
                         ->action(function (Enrollment $record) {
+                            if (! auth()->user()?->can('update', $record)) {
+                                Notification::make()->title('Sin permiso')->danger()->send();
+
+                                return;
+                            }
                             try {
                                 app(PromoteFromWaitlistAction::class)->execute($record);
                                 Notification::make()

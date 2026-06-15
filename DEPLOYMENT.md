@@ -18,7 +18,8 @@ Instrucciones para desplegar este proyecto Laravel 12 en un servidor Plesk con P
   - `ctype`
   - `fileinfo`
   - `bcmath`
-  - `zip`
+  - `zip` — requerida por maatwebsite/excel para las exportaciones
+  - `gd` o `imagick` — opcional, pero recomendada para exports Excel con imágenes
   - `intl`
   - `curl`
 
@@ -93,19 +94,29 @@ Editar `.env` con los valores de producción (ver sección [Variables de entorno
 # 4. Base de datos
 php artisan migrate --force
 
-# 5. Datos base obligatorios (roles y permisos)
+# 5. Roles y permisos (ÚNICO seeder seguro en producción)
 php artisan db:seed --class=RoleSeeder --force
 
-# 6. Enlace simbólico de storage (para archivos subidos)
+# ⚠️  NO ejecutar:
+#   php artisan db:seed --force          ← crea datos demo innecesarios en producción
+#   php artisan db:seed --class=AdminUserSeeder   ← solo para entorno local
+#   php artisan db:seed --class=LocalDemoSeeder   ← solo para entorno local
+
+# 6. Crear el primer administrador (sin credenciales hardcodeadas)
+php artisan ampa:create-admin
+# Con opciones para modo no interactivo / scripts de despliegue:
+# php artisan ampa:create-admin --email=admin@dominio.com --name="Administrador AMPA" --password="..."
+
+# 7. Enlace simbólico de storage (para archivos subidos)
 php artisan storage:link
 
-# 7. Cachés de producción
+# 8. Cachés de producción
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 
-# 8. Assets (si no vienen en el repositorio ni en el despliegue)
+# 9. Assets (si no vienen en el repositorio ni en el despliegue)
 # npm ci && npm run build   ← solo si hay Node disponible en el servidor
 ```
 
@@ -116,11 +127,12 @@ php artisan event:cache
 ```dotenv
 APP_NAME="Portal AMPA"
 APP_ENV=production
-APP_DEBUG=false
-APP_KEY=          # generada con php artisan key:generate
-APP_URL=https://tu-dominio.com
+APP_DEBUG=false                          # CRÍTICO: nunca true en producción
+APP_KEY=                                 # generada con php artisan key:generate
+APP_URL=https://tu-dominio.com           # HTTPS obligatorio
 
 APP_LOCALE=es
+APP_FALLBACK_LOCALE=es
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -130,6 +142,8 @@ DB_USERNAME=usuario_db
 DB_PASSWORD=contraseña_db
 
 SESSION_DRIVER=database
+SESSION_SECURE_COOKIE=true               # Requiere HTTPS
+SESSION_LIFETIME=120
 CACHE_STORE=database
 QUEUE_CONNECTION=database
 
@@ -144,6 +158,8 @@ MAIL_PASSWORD=...
 MAIL_FROM_ADDRESS="ampa@tu-dominio.com"
 MAIL_FROM_NAME="Portal AMPA"
 ```
+
+> **Importante:** con `SESSION_SECURE_COOKIE=true` las cookies solo se envían por HTTPS. Asegúrate de que el dominio tiene certificado SSL activo antes de activar esta opción.
 
 ---
 
@@ -202,14 +218,32 @@ Estado actual (junio 2025):
 
 ---
 
-## Datos demo y entorno de staging
+## Seeders: guía de seguridad
 
-Los datos de demostración (usuario `familia@ampa.test`, familia García López, actividades de prueba) fueron creados mediante `php artisan tinker` en el entorno local. **No están versionados** y no llegarán a producción.
+| Seeder | ¿Cuándo usarlo? | ¿Seguro en producción? |
+|---|---|---|
+| `RoleSeeder` | Primer despliegue + cada actualización que añada permisos | ✅ Sí — idempotente |
+| `AcademicYearSeeder` | Solo si se quieren años académicos base | ✅ Sí — idempotente |
+| `AdminUserSeeder` | **Solo local** — crea `admin@ampa.test / password` | ❌ NO |
+| `DemoDataSeeder` | **Solo local** — crea familias y datos de prueba | ❌ NO |
+| `LocalDemoSeeder` | **Solo local** — dataset completo para QA visual | ❌ NO |
 
-**Pendiente futuro:** crear un `DemoSeeder` opcional que permita recrear un entorno demo/staging reproducible con un solo comando:
+Para crear el administrador en producción, usar **exclusivamente**:
 
 ```bash
-php artisan db:seed --class=DemoSeeder
+php artisan ampa:create-admin
 ```
 
-Este seeder **no debe ejecutarse en producción**. Podría incluir una comprobación de `APP_ENV !== 'production'` antes de insertar datos.
+Este comando no hardcodea credenciales, valida el email y la contraseña, y solo asigna el rol si `RoleSeeder` se ha ejecutado previamente.
+
+## Datos demo y entorno de staging
+
+Los seeders de demo (`AdminUserSeeder`, `DemoDataSeeder`, `LocalDemoSeeder`) incluyen comprobaciones de entorno y se niegan a ejecutarse fuera de `local`. Si se ejecuta `php artisan db:seed --force` en producción, solo correrán `RoleSeeder` y `AcademicYearSeeder` (ambos seguros).
+
+Para recrear un entorno demo/staging local desde cero:
+
+```bash
+php artisan migrate:fresh --seed
+# O solo los datos visuales, sin recrear la BD:
+php artisan db:seed --class=LocalDemoSeeder
+```
