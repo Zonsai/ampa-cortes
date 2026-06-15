@@ -446,6 +446,283 @@ class FamilyFormsTest extends TestCase
             ->assertSessionHasErrors("field_{$field->id}");
     }
 
+    // ─── Response show — ver en solo lectura (10 tests) ──────────────────────
+
+    public function test_index_shows_ver_respuesta_link_for_responded_open_form(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form = $this->createOpenForm(['allow_edit' => false]);
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.index'))
+            ->assertOk()
+            ->assertSee('Ver respuesta');
+    }
+
+    public function test_response_show_displays_submitted_answer(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form = $this->createOpenForm();
+        $field = FormField::factory()->create([
+            'form_id' => $form->id,
+            'type' => FormFieldType::TextShort,
+            'label' => 'Tu nombre',
+            'sort_order' => 1,
+        ]);
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+        FormResponseAnswer::create([
+            'form_response_id' => $response->id,
+            'form_field_id' => $field->id,
+            'value' => 'Ana García',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form, $response]))
+            ->assertOk()
+            ->assertSee('Tu nombre')
+            ->assertSee('Ana García');
+    }
+
+    public function test_response_show_displays_label_and_value(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form = $this->createOpenForm(['title' => 'Encuesta de prueba']);
+        $field = FormField::factory()->create([
+            'form_id' => $form->id,
+            'type' => FormFieldType::TextShort,
+            'label' => 'Observaciones',
+            'sort_order' => 1,
+        ]);
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+        FormResponseAnswer::create([
+            'form_response_id' => $response->id,
+            'form_field_id' => $field->id,
+            'value' => 'Sin alergias',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form, $response]))
+            ->assertOk()
+            ->assertSee('Encuesta de prueba')
+            ->assertSee('Observaciones')
+            ->assertSee('Sin alergias');
+    }
+
+    public function test_response_show_renders_checkboxes_as_readable_text(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form = $this->createOpenForm();
+        $field = FormField::factory()->create([
+            'form_id' => $form->id,
+            'type' => FormFieldType::Checkboxes,
+            'label' => 'Necesidades',
+            'sort_order' => 1,
+            'options' => ['Alergia', 'Movilidad reducida', 'Ninguna'],
+        ]);
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+        FormResponseAnswer::create([
+            'form_response_id' => $response->id,
+            'form_field_id' => $field->id,
+            'value' => json_encode(['Alergia', 'Movilidad reducida']),
+        ]);
+
+        $html = $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form, $response]))
+            ->assertOk()
+            ->getContent();
+
+        // Should show human-readable text, NOT raw JSON
+        $this->assertStringContainsString('Alergia, Movilidad reducida', $html);
+        $this->assertStringNotContainsString('["Alergia"', $html);
+    }
+
+    public function test_response_show_returns_403_for_another_familys_response(): void
+    {
+        ['user' => $user] = $this->createFamilyUser();
+
+        $otherFamily = Family::factory()->create();
+        $form = $this->createOpenForm();
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $otherFamily->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$otherFamily->id,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form, $response]))
+            ->assertForbidden();
+    }
+
+    public function test_response_show_returns_403_for_student_of_another_family(): void
+    {
+        ['user' => $user] = $this->createFamilyUser();
+
+        $otherFamily = Family::factory()->create();
+        $otherStudent = Student::factory()->create(['family_id' => $otherFamily->id]);
+        $form = $this->createOpenForm(['response_scope' => FormResponseScope::PerStudent]);
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $otherFamily->id,
+            'student_id' => $otherStudent->id,
+            'response_key' => 'student:'.$otherStudent->id,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form, $response]))
+            ->assertForbidden();
+    }
+
+    public function test_index_shows_ver_respuesta_and_editar_when_allow_edit_true_and_open(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form = $this->createOpenForm(['allow_edit' => true]);
+        FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.index'))
+            ->assertOk()
+            ->assertSee('Ver respuesta')
+            ->assertSee('Editar respuesta');
+    }
+
+    public function test_index_shows_ver_respuesta_but_not_editar_when_allow_edit_false(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form = $this->createOpenForm(['allow_edit' => false]);
+        FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.index'))
+            ->assertOk()
+            ->assertSee('Ver respuesta')
+            ->assertDontSee('Editar respuesta');
+    }
+
+    public function test_response_show_works_when_form_is_closed(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form = Form::factory()->alreadyClosed()->create([
+            'academic_year_id' => $this->activeYear->id,
+            'allow_edit' => false,
+        ]);
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now()->subDays(3),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form, $response]))
+            ->assertOk();
+    }
+
+    public function test_response_show_does_not_expose_any_form_inputs(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form = $this->createOpenForm();
+        $field = FormField::factory()->create([
+            'form_id' => $form->id,
+            'type' => FormFieldType::TextShort,
+            'label' => 'Campo de texto',
+            'sort_order' => 1,
+        ]);
+        $response = FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+        FormResponseAnswer::create([
+            'form_response_id' => $response->id,
+            'form_field_id' => $field->id,
+            'value' => 'valor guardado',
+        ]);
+
+        $html = $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form, $response]))
+            ->assertOk()
+            ->getContent();
+
+        // No form inputs that could submit data (layout's logout form is allowed)
+        $this->assertStringNotContainsString('<input type="text"', $html);
+        $this->assertStringNotContainsString('<textarea', $html);
+        $this->assertStringNotContainsString('<select', $html);
+        // No form action pointing to data-submitting routes
+        $this->assertStringNotContainsString(route('familia.forms.submit', $form), $html);
+        $this->assertStringNotContainsString(route('familia.forms.update', [$form, $response]), $html);
+    }
+
+    public function test_response_show_returns_403_when_response_belongs_to_different_form(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+
+        $form1 = $this->createOpenForm();
+        $form2 = $this->createOpenForm();
+        $response = FormResponse::create([
+            'form_id' => $form2->id,
+            'family_id' => $family->id,
+            'student_id' => null,
+            'response_key' => 'family:'.$family->id,
+            'submitted_at' => now(),
+        ]);
+
+        // response belongs to form2 but URL references form1
+        $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form1, $response]))
+            ->assertForbidden();
+    }
+
     // ─── Fase 4D: form_id mismatch (2 tests) ─────────────────────────────────
 
     public function test_edit_returns_403_when_response_belongs_to_different_form(): void

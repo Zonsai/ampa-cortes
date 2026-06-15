@@ -24,9 +24,10 @@ class FormsController extends Controller
 
         $openForms = $this->visibilityService->getOpenFormsForFamily($family);
 
-        $respondedFormIds = FormResponse::where('family_id', $family->id)
-            ->pluck('form_id')
-            ->unique();
+        $respondedResponses = FormResponse::where('family_id', $family->id)
+            ->get();
+
+        $respondedFormIds = $respondedResponses->pluck('form_id')->unique();
 
         $pendingForms = $openForms->filter(fn ($f) => ! $respondedFormIds->contains($f->id));
         $respondedOpenForms = $openForms->filter(fn ($f) => $respondedFormIds->contains($f->id));
@@ -36,10 +37,14 @@ class FormsController extends Controller
             ->whereNotIn('id', $openForms->pluck('id'))
             ->get();
 
+        // Responses grouped by form_id for "Ver respuesta" links in the index
+        $responsesByFormId = $respondedResponses->groupBy('form_id');
+
         return view('familia.forms.index', compact(
             'pendingForms',
             'respondedOpenForms',
             'closedRespondedForms',
+            'responsesByFormId',
         ));
     }
 

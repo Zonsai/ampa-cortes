@@ -41,6 +41,28 @@ class FormResponseController extends Controller
             ->with('success', '¡Respuesta enviada correctamente!');
     }
 
+    public function show(Request $request, Form $form, FormResponse $response)
+    {
+        $family = $request->user()->family;
+
+        if ($response->form_id !== $form->id) {
+            abort(403);
+        }
+
+        if ($response->family_id !== $family->id) {
+            abort(403);
+        }
+
+        if ($response->student_id && ! $family->students()->where('students.id', $response->student_id)->exists()) {
+            abort(403);
+        }
+
+        $fields = $form->formFields()->orderBy('sort_order')->get();
+        $answersMap = $response->answers->keyBy('form_field_id');
+
+        return view('familia.forms.response', compact('form', 'response', 'fields', 'answersMap'));
+    }
+
     public function edit(Request $request, Form $form, FormResponse $response)
     {
         $family = $request->user()->family;

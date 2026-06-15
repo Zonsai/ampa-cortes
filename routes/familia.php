@@ -29,6 +29,7 @@ Route::prefix('familia')->name('familia.')->group(function () {
         Route::get('/formularios', [FormsController::class, 'index'])->name('forms.index');
         Route::get('/formularios/{form}', [FormsController::class, 'show'])->name('forms.show');
         Route::post('/formularios/{form}/responder', [FormResponseController::class, 'store'])->name('forms.submit');
+        Route::get('/formularios/{form}/respuestas/{response}', [FormResponseController::class, 'show'])->name('forms.responses.show');
         Route::get('/formularios/{form}/respuestas/{response}/editar', [FormResponseController::class, 'edit'])->name('forms.edit');
         Route::put('/formularios/{form}/respuestas/{response}', [FormResponseController::class, 'update'])->name('forms.update');
 

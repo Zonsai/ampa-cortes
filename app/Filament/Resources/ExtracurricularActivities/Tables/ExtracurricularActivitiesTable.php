@@ -11,7 +11,6 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -35,12 +34,16 @@ class ExtracurricularActivitiesTable
                     ->label('Estado')
                     ->badge()
                     ->color(fn (ActivityStatus $state) => $state->color()),
-                IconColumn::make('is_visible_for_families')
+                TextColumn::make('is_visible_for_families')
                     ->label('Visible')
-                    ->boolean(),
-                IconColumn::make('requires_ampa_membership')
-                    ->label('Solo socios')
-                    ->boolean(),
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Sí' : 'No')
+                    ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
+                TextColumn::make('requires_ampa_membership')
+                    ->label('Acceso')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Solo socios' : 'Abierto a todos')
+                    ->color(fn (bool $state): string => $state ? 'warning' : 'success'),
                 TextColumn::make('activityGroups_count')
                     ->label('Grupos')
                     ->counts('activityGroups'),

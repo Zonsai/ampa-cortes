@@ -27,14 +27,20 @@
     @php $familyKey = 'family:' . $family->id; $existingResponse = $responses->get($familyKey); @endphp
 
     @if($existingResponse)
-        <div class="mb-5 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-800 text-sm">
-            Ya has enviado una respuesta para este formulario.
-            @if($form->allow_edit && $form->isOpenNow())
-                <a href="{{ route('familia.forms.edit', [$form, $existingResponse]) }}"
-                   class="ml-2 font-medium text-green-700 hover:underline">
-                    Editar respuesta →
+        <div class="mb-5 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-800 text-sm flex items-center justify-between gap-3">
+            <span>Ya has enviado una respuesta para este formulario.</span>
+            <div class="flex items-center gap-3 shrink-0">
+                <a href="{{ route('familia.forms.responses.show', [$form, $existingResponse]) }}"
+                   class="font-medium text-green-700 hover:underline">
+                    Ver respuesta →
                 </a>
-            @endif
+                @if($form->allow_edit && $form->isOpenNow())
+                    <a href="{{ route('familia.forms.edit', [$form, $existingResponse]) }}"
+                       class="font-medium text-green-700 hover:underline">
+                        Editar →
+                    </a>
+                @endif
+            </div>
         </div>
     @elseif(! $form->isOpenNow())
         <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-amber-800 text-sm">
@@ -82,17 +88,25 @@
         <div class="mb-5 space-y-2">
             @foreach($answeredStudents as $student)
                 @php $studentResponse = $responses->get('student:' . $student->id); @endphp
-                <div class="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-800 text-sm flex items-center justify-between">
+                <div class="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-800 text-sm flex items-center justify-between gap-3">
                     <span>
                         <strong>{{ $student->first_name }} {{ $student->last_name }}</strong>
                         ya ha respondido este formulario.
                     </span>
-                    @if($form->allow_edit && $form->isOpenNow() && $studentResponse)
-                        <a href="{{ route('familia.forms.edit', [$form, $studentResponse]) }}"
-                           class="ml-3 font-medium text-green-700 hover:underline shrink-0">
-                            Editar →
-                        </a>
-                    @endif
+                    <div class="flex items-center gap-3 shrink-0">
+                        @if($studentResponse)
+                            <a href="{{ route('familia.forms.responses.show', [$form, $studentResponse]) }}"
+                               class="font-medium text-green-700 hover:underline">
+                                Ver respuesta →
+                            </a>
+                        @endif
+                        @if($form->allow_edit && $form->isOpenNow() && $studentResponse)
+                            <a href="{{ route('familia.forms.edit', [$form, $studentResponse]) }}"
+                               class="font-medium text-green-700 hover:underline">
+                                Editar →
+                            </a>
+                        @endif
+                    </div>
                 </div>
             @endforeach
         </div>

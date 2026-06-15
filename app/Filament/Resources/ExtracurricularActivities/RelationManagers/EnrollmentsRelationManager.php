@@ -131,10 +131,12 @@ class EnrollmentsRelationManager extends RelationManager
                     }),
 
                 Action::make('promote')
-                    ->label('Promover siguiente')
+                    ->label('Cubrir plaza')
                     ->icon('heroicon-o-arrow-up-circle')
                     ->color('success')
                     ->requiresConfirmation()
+                    ->modalHeading('Cubrir plaza con lista de espera')
+                    ->modalDescription('Se inscribirá automáticamente al siguiente alumno/a de la lista de espera en este grupo, siguiendo el orden de espera.')
                     ->visible(fn (Enrollment $record) => $record->status === EnrollmentStatus::Waitlist)
                     ->action(function (Enrollment $record) {
                         try {
