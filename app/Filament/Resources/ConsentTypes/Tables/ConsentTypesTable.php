@@ -12,6 +12,7 @@ use App\Models\ConsentType;
 use App\Models\ConsentVersion;
 use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -40,7 +41,8 @@ class ConsentTypesTable
             ->columns([
                 TextColumn::make('sort_order')
                     ->label('#')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable()
@@ -53,10 +55,12 @@ class ConsentTypesTable
                     ->badge(),
                 IconColumn::make('is_rejectable')
                     ->label('Rechazable')
-                    ->boolean(),
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_revocable')
                     ->label('Revocable')
-                    ->boolean(),
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('requires_image_review')
                     ->label('Rev. imagen')
                     ->boolean()
@@ -64,7 +68,8 @@ class ConsentTypesTable
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('versions_count')
                     ->label('Versiones')
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('pending_count')
                     ->label('Pendientes')
                     ->alignCenter(),
@@ -168,22 +173,27 @@ class ConsentTypesTable
                             Notification::make()->title($message)->danger()->send();
                         }
                     }),
-                Action::make('exportar_estado')
-                    ->label('Exportar estado')
+                ActionGroup::make([
+                    Action::make('exportar_estado')
+                        ->label('Exportar estado')
+                        ->icon(Heroicon::ArrowDownTray)
+                        ->color('gray')
+                        ->action(fn (ConsentType $record) => Excel::download(
+                            new ConsentStatusExport($record),
+                            'consentimiento-'.str($record->name)->slug().'-estado.xlsx',
+                        )),
+                    Action::make('exportar_historico')
+                        ->label('Exportar histórico')
+                        ->icon(Heroicon::Clock)
+                        ->color('gray')
+                        ->action(fn (ConsentType $record) => Excel::download(
+                            new ConsentHistoryExport($record),
+                            'consentimiento-'.str($record->name)->slug().'-historico.xlsx',
+                        )),
+                ])
+                    ->label('Exportar')
                     ->icon(Heroicon::ArrowDownTray)
-                    ->color('gray')
-                    ->action(fn (ConsentType $record) => Excel::download(
-                        new ConsentStatusExport($record),
-                        'consentimiento-'.str($record->name)->slug().'-estado.xlsx',
-                    )),
-                Action::make('exportar_historico')
-                    ->label('Exportar histórico')
-                    ->icon(Heroicon::Clock)
-                    ->color('gray')
-                    ->action(fn (ConsentType $record) => Excel::download(
-                        new ConsentHistoryExport($record),
-                        'consentimiento-'.str($record->name)->slug().'-historico.xlsx',
-                    )),
+                    ->color('gray'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

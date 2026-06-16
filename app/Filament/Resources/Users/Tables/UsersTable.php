@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users\Tables;
 
 use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -53,7 +54,8 @@ class UsersTable
                 IconColumn::make('email_verified_at')
                     ->label('Email verificado')
                     ->state(fn (User $record) => $record->email_verified_at !== null)
-                    ->boolean(),
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_active')
                     ->label('Activo')
                     ->boolean(),
@@ -84,67 +86,72 @@ class UsersTable
                     ->query(fn (Builder $query) => $query->whereNotNull('email_verified_at')),
             ])
             ->recordActions([
-                Action::make('reset_password')
-                    ->label('Restablecer contraseña')
-                    ->icon('heroicon-o-key')
-                    ->color('warning')
-                    ->visible(fn (User $record) => self::canManageUser($record))
-                    ->schema([
-                        TextInput::make('password')
-                            ->label('Nueva contraseña')
-                            ->password()
-                            ->required()
-                            ->minLength(8)
-                            ->same('password_confirmation'),
-                        TextInput::make('password_confirmation')
-                            ->label('Confirmar contraseña')
-                            ->password()
-                            ->required()
-                            ->dehydrated(false),
-                    ])
-                    ->modalHeading('Restablecer contraseña')
-                    ->modalSubmitActionLabel('Guardar contraseña')
-                    ->action(function (array $data, User $record): void {
-                        if (! self::canManageUser($record)) {
-                            Notification::make()->title('Sin permiso')->danger()->send();
+                EditAction::make()
+                    ->iconButton()
+                    ->tooltip('Editar'),
+                ActionGroup::make([
+                    Action::make('reset_password')
+                        ->label('Restablecer contraseña')
+                        ->icon('heroicon-o-key')
+                        ->color('warning')
+                        ->visible(fn (User $record) => self::canManageUser($record))
+                        ->schema([
+                            TextInput::make('password')
+                                ->label('Nueva contraseña')
+                                ->password()
+                                ->required()
+                                ->minLength(8)
+                                ->same('password_confirmation'),
+                            TextInput::make('password_confirmation')
+                                ->label('Confirmar contraseña')
+                                ->password()
+                                ->required()
+                                ->dehydrated(false),
+                        ])
+                        ->modalHeading('Restablecer contraseña')
+                        ->modalSubmitActionLabel('Guardar contraseña')
+                        ->action(function (array $data, User $record): void {
+                            if (! self::canManageUser($record)) {
+                                Notification::make()->title('Sin permiso')->danger()->send();
 
-                            return;
-                        }
-                        $record->update(['password' => $data['password']]);
-                        Notification::make()->title('Contraseña restablecida')->success()->send();
-                    }),
+                                return;
+                            }
+                            $record->update(['password' => $data['password']]);
+                            Notification::make()->title('Contraseña restablecida')->success()->send();
+                        }),
 
-                Action::make('toggle_active')
-                    ->label(fn (User $record) => $record->is_active ? 'Desactivar' : 'Activar')
-                    ->icon(fn (User $record) => $record->is_active ? 'heroicon-o-lock-closed' : 'heroicon-o-lock-open')
-                    ->color(fn (User $record) => $record->is_active ? 'danger' : 'success')
-                    ->requiresConfirmation()
-                    ->modalHeading(fn (User $record) => $record->is_active ? 'Desactivar cuenta' : 'Activar cuenta')
-                    ->modalDescription(fn (User $record) => $record->is_active
-                        ? 'El usuario no podrá iniciar sesión. Se pueden reactivar en cualquier momento.'
-                        : 'El usuario podrá iniciar sesión de nuevo.')
-                    ->visible(fn (User $record) => self::canManageUser($record))
-                    ->action(function (User $record): void {
-                        if (! self::canManageUser($record)) {
-                            Notification::make()->title('Sin permiso')->danger()->send();
+                    Action::make('toggle_active')
+                        ->label(fn (User $record) => $record->is_active ? 'Desactivar' : 'Activar')
+                        ->icon(fn (User $record) => $record->is_active ? 'heroicon-o-lock-closed' : 'heroicon-o-lock-open')
+                        ->color(fn (User $record) => $record->is_active ? 'danger' : 'success')
+                        ->requiresConfirmation()
+                        ->modalHeading(fn (User $record) => $record->is_active ? 'Desactivar cuenta' : 'Activar cuenta')
+                        ->modalDescription(fn (User $record) => $record->is_active
+                            ? 'El usuario no podrá iniciar sesión. Se pueden reactivar en cualquier momento.'
+                            : 'El usuario podrá iniciar sesión de nuevo.')
+                        ->visible(fn (User $record) => self::canManageUser($record))
+                        ->action(function (User $record): void {
+                            if (! self::canManageUser($record)) {
+                                Notification::make()->title('Sin permiso')->danger()->send();
 
-                            return;
-                        }
-                        if ($record->is_active && self::isLastActiveSuperAdmin($record)) {
-                            Notification::make()
-                                ->title('No se puede desactivar')
-                                ->body('Este usuario es el último super_admin activo. Crea otro super_admin antes de desactivarlo.')
-                                ->danger()
-                                ->send();
+                                return;
+                            }
+                            if ($record->is_active && self::isLastActiveSuperAdmin($record)) {
+                                Notification::make()
+                                    ->title('No se puede desactivar')
+                                    ->body('Este usuario es el último super_admin activo. Crea otro super_admin antes de desactivarlo.')
+                                    ->danger()
+                                    ->send();
 
-                            return;
-                        }
-                        $record->update(['is_active' => ! $record->is_active]);
-                        $label = $record->is_active ? 'activada' : 'desactivada';
-                        Notification::make()->title("Cuenta {$label}")->success()->send();
-                    }),
-
-                EditAction::make(),
+                                return;
+                            }
+                            $record->update(['is_active' => ! $record->is_active]);
+                            $label = $record->is_active ? 'activada' : 'desactivada';
+                            Notification::make()->title("Cuenta {$label}")->success()->send();
+                        }),
+                ])
+                    ->label('Acciones')
+                    ->icon('heroicon-m-ellipsis-vertical'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
