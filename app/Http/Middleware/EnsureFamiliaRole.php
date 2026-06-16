@@ -18,6 +18,11 @@ class EnsureFamiliaRole
             abort(403);
         }
 
+        if (! $request->user()->is_active) {
+            return redirect()->route('familia.login')
+                ->with('error', 'Tu cuenta está desactivada. Contacta con el AMPA.');
+        }
+
         if ($request->user()->guardian === null || $request->user()->guardian->family_id === null) {
             return redirect()->route('familia.login')
                 ->with('error', 'Tu cuenta no está vinculada a ninguna familia. Contacta con el AMPA.');

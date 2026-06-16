@@ -20,7 +20,8 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole(['super_admin', 'junta_ampa', 'admin_extraescolares', 'admin_formularios']);
+        return $this->is_active
+            && $this->hasRole(['super_admin', 'junta_ampa', 'admin_extraescolares', 'admin_formularios']);
     }
 
     public function guardian(): HasOne
@@ -53,6 +54,8 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
+        'is_active',
+        'email_verified_at',
     ];
 
     /**
@@ -75,6 +78,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 }

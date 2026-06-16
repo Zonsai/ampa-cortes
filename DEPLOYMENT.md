@@ -109,6 +109,12 @@ php artisan db:seed --class=AppSettingsSeeder --force
 php artisan ampa:create-admin
 # Con opciones para modo no interactivo / scripts de despliegue:
 # php artisan ampa:create-admin --email=admin@dominio.com --name="Administrador AMPA" --password="..."
+#
+# Una vez creado el primer admin, el resto de usuarios se gestionan desde el panel:
+# - Panel admin → Configuración → Usuarios
+# - Para crear acceso familiar a un tutor/a: panel → Familias → Tutores/as legales
+#   → acción "Crear acceso familiar" en la fila correspondiente.
+# - Las contraseñas temporales se comunican manualmente; no se envían emails.
 
 # 7. Enlace simbólico de storage (para archivos subidos, incluyendo logos)
 php artisan storage:link

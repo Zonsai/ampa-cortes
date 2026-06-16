@@ -40,6 +40,14 @@ class AuthController extends Controller
                 ->onlyInput('email');
         }
 
+        if (! Auth::user()->is_active) {
+            Auth::logout();
+
+            return back()
+                ->withErrors(['email' => 'Esta cuenta está desactivada. Contacta con el AMPA.'])
+                ->onlyInput('email');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('familia.dashboard'));
