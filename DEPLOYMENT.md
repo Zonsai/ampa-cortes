@@ -94,8 +94,11 @@ Editar `.env` con los valores de producción (ver sección [Variables de entorno
 # 4. Base de datos
 php artisan migrate --force
 
-# 5. Roles y permisos (ÚNICO seeder seguro en producción)
+# 5. Roles y permisos (idempotente)
 php artisan db:seed --class=RoleSeeder --force
+
+# 5b. Ajustes de marca por defecto (idempotente)
+php artisan db:seed --class=AppSettingsSeeder --force
 
 # ⚠️  NO ejecutar:
 #   php artisan db:seed --force          ← crea datos demo innecesarios en producción
@@ -107,8 +110,10 @@ php artisan ampa:create-admin
 # Con opciones para modo no interactivo / scripts de despliegue:
 # php artisan ampa:create-admin --email=admin@dominio.com --name="Administrador AMPA" --password="..."
 
-# 7. Enlace simbólico de storage (para archivos subidos)
+# 7. Enlace simbólico de storage (para archivos subidos, incluyendo logos)
 php artisan storage:link
+# Los logos se almacenan en storage/app/public/branding/
+# El servidor debe servir /storage vía symlink (ya creado con el comando anterior)
 
 # 8. Cachés de producción
 php artisan config:cache
@@ -224,6 +229,7 @@ Estado actual (junio 2025):
 |---|---|---|
 | `RoleSeeder` | Primer despliegue + cada actualización que añada permisos | ✅ Sí — idempotente |
 | `AcademicYearSeeder` | Solo si se quieren años académicos base | ✅ Sí — idempotente |
+| `AppSettingsSeeder` | Primer despliegue + defaults de marca si no existen | ✅ Sí — idempotente |
 | `AdminUserSeeder` | **Solo local** — crea `admin@ampa.test / password` | ❌ NO |
 | `DemoDataSeeder` | **Solo local** — crea familias y datos de prueba | ❌ NO |
 | `LocalDemoSeeder` | **Solo local** — dataset completo para QA visual | ❌ NO |

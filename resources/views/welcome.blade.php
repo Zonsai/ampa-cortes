@@ -3,8 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AMPA Cortés de Aragón — Portal</title>
+    <title>{{ $branding['ampa_name'] ?? 'AMPA' }} — Portal</title>
     <style>
+        :root {
+            --brand-primary: {{ $branding['primary_color'] ?? '#4f46e5' }};
+            --brand-accent: {{ $branding['accent_color'] ?? '#0f766e' }};
+        }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -27,10 +31,36 @@
             padding: 2.5rem 2rem;
             text-align: center;
         }
+        .logo-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .75rem;
+            margin-bottom: 1.25rem;
+        }
+        .logo-img {
+            height: 48px;
+            width: auto;
+            object-fit: contain;
+        }
+        .logo-initials {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--brand-primary);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            flex-shrink: 0;
+        }
         .badge {
             display: inline-block;
             background: #eff6ff;
-            color: #1d4ed8;
+            color: var(--brand-primary);
             font-size: .75rem;
             font-weight: 600;
             letter-spacing: .05em;
@@ -44,7 +74,12 @@
             font-weight: 700;
             color: #0f172a;
             line-height: 1.3;
-            margin-bottom: .75rem;
+            margin-bottom: .5rem;
+        }
+        .school-name {
+            font-size: .9rem;
+            color: #64748b;
+            margin-bottom: 1.5rem;
         }
         .subtitle {
             font-size: .9375rem;
@@ -67,11 +102,11 @@
             transition: background .15s, box-shadow .15s;
         }
         .btn-primary {
-            background: #1d4ed8;
+            background: var(--brand-primary);
             color: #ffffff;
-            border: 1px solid #1d4ed8;
+            border: 1px solid var(--brand-primary);
         }
-        .btn-primary:hover { background: #1e40af; }
+        .btn-primary:hover { filter: brightness(.9); }
         .btn-secondary {
             background: #ffffff;
             color: #374151;
@@ -87,8 +122,32 @@
 </head>
 <body>
     <div class="card">
+        @php
+            $ampaLogo = $branding['ampa_logo_path'] ? \Illuminate\Support\Facades\Storage::disk('public')->url($branding['ampa_logo_path']) : null;
+            $schoolLogo = $branding['school_logo_path'] ? \Illuminate\Support\Facades\Storage::disk('public')->url($branding['school_logo_path']) : null;
+            $ampaName = $branding['ampa_name'] ?? 'AMPA';
+            $schoolName = $branding['school_name'] ?? '';
+        @endphp
+
+        <div class="logo-wrap">
+            @if($ampaLogo)
+                <img src="{{ $ampaLogo }}" alt="Logo {{ $ampaName }}" class="logo-img">
+            @else
+                <span class="logo-initials" aria-hidden="true">
+                    {{ mb_strtoupper(mb_substr($ampaName, 0, 2)) }}
+                </span>
+            @endif
+
+            @if($schoolLogo)
+                <img src="{{ $schoolLogo }}" alt="Logo {{ $schoolName }}" class="logo-img">
+            @endif
+        </div>
+
         <div class="badge">AMPA</div>
-        <h1>AMPA Cortés de Aragón</h1>
+        <h1>{{ $ampaName }}</h1>
+        @if($schoolName)
+            <p class="school-name">{{ $schoolName }}</p>
+        @endif
         <p class="subtitle">Portal de gestión del AMPA y zona de familias</p>
 
         <div class="btn-group">
@@ -105,6 +164,6 @@
         </div>
     </div>
 
-    <p class="footer">AMPA Cortés de Aragón &mdash; Zona privada</p>
+    <p class="footer">{{ $ampaName }} &mdash; Zona privada</p>
 </body>
 </html>

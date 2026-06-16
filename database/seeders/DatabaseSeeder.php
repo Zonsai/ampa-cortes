@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             AcademicYearSeeder::class,
+            AppSettingsSeeder::class,
         ]);
 
         // Local-only seeders: demo users with known passwords, sample data.
