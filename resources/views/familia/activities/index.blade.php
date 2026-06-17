@@ -4,22 +4,35 @@
 
 @section('content')
 
-<h1 class="text-2xl font-bold text-gray-900 mb-2">Actividades extraescolares</h1>
+<div class="family-page-header">
+    <h1>Actividades extraescolares</h1>
+    @if($activeYear)
+        <p>Curso {{ $activeYear->name }}</p>
+    @endif
+</div>
 
 @if(! $activeYear)
-    <div class="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-4 text-amber-800 text-sm">
-        <strong>No hay curso académico activo.</strong>
-        El AMPA aún no ha configurado el curso activo. Vuelve a consultar más adelante o contacta con el AMPA.
+    <div class="family-alert family-alert--warning">
+        <span>
+            <strong>No hay curso académico activo.</strong>
+            El AMPA aún no ha configurado el curso activo. Vuelve a consultar más adelante o contacta con el AMPA.
+        </span>
     </div>
 @else
-    <p class="text-gray-500 text-sm mb-6">Curso {{ $activeYear->name }}</p>
+    <div class="family-alert family-alert--brand" style="margin-bottom: 20px;">
+        <span>
+            Al apuntar a un hijo/a envías una <strong>solicitud</strong>:
+            no reserva plaza hasta que el AMPA la confirme y actualice el estado.
+        </span>
+    </div>
 
     @if($activities->isEmpty())
-        <div class="bg-white rounded-xl border border-gray-200 px-6 py-10 text-center text-gray-500">
-            No hay actividades disponibles en este momento.
+        <div class="family-empty-state">
+            <div class="family-empty-state__title">No hay actividades disponibles</div>
+            <p>Por ahora no hay extraescolares publicadas. Vuelve a consultar más adelante.</p>
         </div>
     @else
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="family-activity-grid">
             @foreach($activities as $activity)
             @php
                 $activityEnrollments = $familyEnrollmentsByActivity->get($activity->id, collect());
@@ -31,28 +44,25 @@
                 $minPrice = $prices->first();
                 $maxPrice = $prices->last();
             @endphp
-            <div class="flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-indigo-300 hover:shadow-sm transition-all">
-                <div class="flex-1 p-5">
-                    <div class="flex items-start justify-between gap-2 mb-2">
-                        <h2 class="font-semibold text-gray-900">{{ $activity->name }}</h2>
+            <div class="family-activity-card">
+                <div class="family-activity-card__body">
+                    <div class="family-activity-card__head">
+                        <h2 class="family-activity-card__title">{{ $activity->name }}</h2>
                         @if($activity->activity_groups_count > 0)
-                            <span class="shrink-0 text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">{{ $activity->activity_groups_count }} {{ $activity->activity_groups_count === 1 ? 'grupo' : 'grupos' }}</span>
+                            <span class="family-chip family-chip--brand">{{ $activity->activity_groups_count }} {{ $activity->activity_groups_count === 1 ? 'grupo' : 'grupos' }}</span>
                         @endif
                     </div>
 
                     @if($activity->short_description)
-                        <p class="text-sm text-gray-500 mb-3 line-clamp-2">{{ $activity->short_description }}</p>
+                        <p class="family-activity-card__desc">{{ $activity->short_description }}</p>
                     @endif
 
-                    <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <div class="family-meta">
                         @if($activity->requires_ampa_membership)
-                            <span class="inline-flex items-center text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">
-                                Solo socios/as AMPA
-                            </span>
+                            <span class="family-chip family-chip--ampa">Solo socios/as AMPA</span>
                         @endif
-
                         @if($minPrice !== null)
-                            <span class="text-xs text-gray-500">
+                            <span class="family-price">
                                 @if((float) $minPrice === (float) $maxPrice)
                                     {{ number_format($minPrice, 2, ',', '.') }} €/mes (socio)
                                 @else
@@ -63,34 +73,19 @@
                     </div>
 
                     @if($activityEnrollments->isNotEmpty())
-                        <div class="space-y-1">
+                        <div class="family-enroll-list">
                             @foreach($activityEnrollments as $enr)
-                                <div class="flex items-center gap-2 text-xs">
-                                    <span class="text-gray-600">{{ $enr->student->first_name }}:</span>
-                                    <span class="font-medium
-                                        @if(in_array($enr->status->value, ['enrolled', 'paid'])) text-green-700
-                                        @elseif($enr->status->value === 'pending_payment') text-blue-700
-                                        @elseif($enr->status->value === 'waitlist') text-amber-700
-                                        @elseif($enr->status->value === 'pending') text-indigo-700
-                                        @else text-gray-500
-                                        @endif">
-                                        @if($enr->status === \App\Enums\EnrollmentStatus::Pending)
-                                            Solicitud enviada
-                                        @elseif($enr->status === \App\Enums\EnrollmentStatus::Paid)
-                                            Pago registrado
-                                        @else
-                                            {{ $enr->status->label() }}
-                                        @endif
-                                    </span>
+                                <div class="family-enroll-line">
+                                    <span class="family-enroll-line__name">{{ $enr->student->first_name }}</span>
+                                    @include('familia.partials.status-badge', ['status' => $enr->status])
                                 </div>
                             @endforeach
                         </div>
                     @endif
                 </div>
 
-                <div class="px-5 pb-5">
-                    <a href="{{ route('familia.activities.show', $activity) }}"
-                       class="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                <div class="family-activity-card__foot">
+                    <a href="{{ route('familia.activities.show', $activity) }}" class="family-btn family-btn--primary family-btn--block">
                         Ver grupos y apuntarse →
                     </a>
                 </div>
