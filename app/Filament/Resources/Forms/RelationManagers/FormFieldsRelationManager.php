@@ -29,6 +29,27 @@ class FormFieldsRelationManager extends RelationManager
 
     protected static ?string $pluralModelLabel = 'campos';
 
+    /**
+     * Normalizes a raw form state value into a FormFieldType.
+     *
+     * The `type` Select is backed by the FormFieldType enum, so when editing an
+     * existing record the hydrated state may already be a FormFieldType instance
+     * instead of its string value. FormFieldType::tryFrom() only accepts string|int,
+     * so callers must normalize first to avoid a TypeError.
+     */
+    public static function resolveType(mixed $value): ?FormFieldType
+    {
+        if ($value instanceof FormFieldType) {
+            return $value;
+        }
+
+        if (is_string($value) || is_int($value)) {
+            return FormFieldType::tryFrom($value);
+        }
+
+        return null;
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
@@ -57,8 +78,8 @@ class FormFieldsRelationManager extends RelationManager
                     ->label('Opciones (una por línea)')
                     ->rows(4)
                     ->hint('Introduce una opción por línea')
-                    ->visible(fn (Get $get): bool => FormFieldType::tryFrom($get('type') ?? '')?->requiresOptions() ?? false)
-                    ->required(fn (Get $get): bool => FormFieldType::tryFrom($get('type') ?? '')?->requiresOptions() ?? false)
+                    ->visible(fn (Get $get): bool => self::resolveType($get('type'))?->requiresOptions() ?? false)
+                    ->required(fn (Get $get): bool => self::resolveType($get('type'))?->requiresOptions() ?? false)
                     ->formatStateUsing(fn (mixed $state): ?string => is_array($state) ? implode("\n", $state) : $state)
                     ->dehydrateStateUsing(fn (?string $state): ?array => $state !== null
                         ? array_values(array_filter(array_map('trim', explode("\n", $state))))

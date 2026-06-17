@@ -4,15 +4,19 @@ namespace App\Filament\Resources\Forms\Tables;
 
 use App\Enums\FormStatus;
 use App\Models\AcademicYear;
+use App\Models\Form;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 
 class FormsTable
 {
@@ -61,6 +65,55 @@ class FormsTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('clonar')
+                    ->label('Clonar')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->color('gray')
+                    ->visible(fn (Form $record): bool => auth()->user()?->can('create', Form::class) ?? false)
+                    ->requiresConfirmation()
+                    ->modalHeading('Clonar formulario')
+                    ->modalDescription('Se creará una copia en estado borrador, con sus campos y su público objetivo. No se copian las respuestas.')
+                    ->modalSubmitActionLabel('Clonar')
+                    ->action(function (Form $record): void {
+                        if (! (auth()->user()?->can('create', Form::class) ?? false)) {
+                            Notification::make()->title('Sin permiso')->danger()->send();
+
+                            return;
+                        }
+
+                        $clone = DB::transaction(function () use ($record): Form {
+                            // Build from fillable only: avoids copying aggregate attributes
+                            // (e.g. form_responses_count from the table withCount).
+                            $new = new Form($record->only($record->getFillable()));
+                            $new->title = $record->title.' (copia)';
+                            $new->status = FormStatus::Draft;
+                            $new->created_by = auth()->id();
+                            // A clone starts as a fresh draft: never inherit scheduling dates.
+                            $new->opens_at = null;
+                            $new->closes_at = null;
+                            $new->save();
+
+                            foreach ($record->formFields as $field) {
+                                $fieldClone = $field->replicate();
+                                $fieldClone->form_id = $new->id;
+                                $fieldClone->save();
+                            }
+
+                            foreach ($record->formTargetItems as $target) {
+                                $targetClone = $target->replicate();
+                                $targetClone->form_id = $new->id;
+                                $targetClone->save();
+                            }
+
+                            return $new;
+                        });
+
+                        Notification::make()
+                            ->title('Formulario clonado')
+                            ->body("Se ha creado «{$clone->title}» en borrador.")
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -475,6 +475,64 @@ class UserResourceTest extends TestCase
         $this->assertTrue(Hash::check('newpassword123', $target->fresh()->password));
     }
 
+    public function test_junta_ampa_can_reset_password_of_familia_user(): void
+    {
+        $junta = $this->createUser('junta_ampa');
+        $target = $this->createUser('familia');
+
+        Livewire::actingAs($junta)
+            ->test(ListUsers::class)
+            ->callTableAction('reset_password', $target, data: [
+                'password' => 'newpassword123',
+                'password_confirmation' => 'newpassword123',
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertTrue(Hash::check('newpassword123', $target->fresh()->password));
+    }
+
+    public function test_junta_ampa_can_reset_password_of_admin_formularios(): void
+    {
+        $junta = $this->createUser('junta_ampa');
+        $target = $this->createUser('admin_formularios');
+
+        Livewire::actingAs($junta)
+            ->test(ListUsers::class)
+            ->callTableAction('reset_password', $target, data: [
+                'password' => 'newpassword123',
+                'password_confirmation' => 'newpassword123',
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertTrue(Hash::check('newpassword123', $target->fresh()->password));
+    }
+
+    public function test_junta_ampa_cannot_reset_password_of_super_admin(): void
+    {
+        $junta = $this->createUser('junta_ampa');
+
+        Livewire::actingAs($junta)
+            ->test(ListUsers::class)
+            ->assertTableActionHidden('reset_password', $this->superAdmin);
+    }
+
+    public function test_reset_password_keeps_user_inactive(): void
+    {
+        $target = User::factory()->inactive()->create();
+        $target->assignRole('familia');
+
+        Livewire::actingAs($this->superAdmin)
+            ->test(ListUsers::class)
+            ->callTableAction('reset_password', $target, data: [
+                'password' => 'newpassword123',
+                'password_confirmation' => 'newpassword123',
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertFalse($target->fresh()->is_active);
+        $this->assertTrue(Hash::check('newpassword123', $target->fresh()->password));
+    }
+
     // ─── Acción Guardian: Crear acceso familiar ───────────────────────────────
 
     public function test_create_family_access_action_creates_user(): void

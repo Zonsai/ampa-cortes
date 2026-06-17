@@ -9,6 +9,8 @@ use App\Enums\FormTargetType;
 use App\Exports\Forms\FormResponsesExport;
 use App\Filament\Resources\Forms\Pages\CreateForm;
 use App\Filament\Resources\Forms\Pages\EditForm;
+use App\Filament\Resources\Forms\Pages\ListForms;
+use App\Filament\Resources\Forms\RelationManagers\FormFieldsRelationManager;
 use App\Filament\Resources\Forms\RelationManagers\FormResponsesRelationManager;
 use App\Models\AcademicYear;
 use App\Models\Family;
@@ -238,6 +240,173 @@ class FormResourceTest extends TestCase
         $this->assertFalse(FormFieldType::TextShort->requiresOptions());
         $this->assertFalse(FormFieldType::Email->requiresOptions());
         $this->assertFalse(FormFieldType::InfoText->requiresOptions());
+    }
+
+    // ── FormFieldsRelationManager: type normalization (hotfix) ────────────────
+
+    public function test_resolve_type_accepts_enum_instance(): void
+    {
+        // The hydrated `type` state may arrive as a FormFieldType instance on edit.
+        $this->assertSame(
+            FormFieldType::Select,
+            FormFieldsRelationManager::resolveType(FormFieldType::Select)
+        );
+    }
+
+    public function test_resolve_type_accepts_string_value(): void
+    {
+        $this->assertSame(
+            FormFieldType::Select,
+            FormFieldsRelationManager::resolveType('select')
+        );
+    }
+
+    public function test_resolve_type_returns_null_for_null_or_invalid(): void
+    {
+        $this->assertNull(FormFieldsRelationManager::resolveType(null));
+        $this->assertNull(FormFieldsRelationManager::resolveType(''));
+        $this->assertNull(FormFieldsRelationManager::resolveType('not_a_type'));
+    }
+
+    public function test_resolve_type_drives_options_visibility_for_option_types(): void
+    {
+        // Both enum and string states must resolve so options show only for option types.
+        $this->assertTrue(FormFieldsRelationManager::resolveType(FormFieldType::Select)?->requiresOptions());
+        $this->assertTrue(FormFieldsRelationManager::resolveType('radio')?->requiresOptions());
+        $this->assertFalse(FormFieldsRelationManager::resolveType(FormFieldType::TextShort)?->requiresOptions());
+        $this->assertFalse(FormFieldsRelationManager::resolveType('text_short')?->requiresOptions());
+    }
+
+    public function test_editing_options_field_does_not_error_when_type_state_is_enum(): void
+    {
+        // Reproduces the FormFieldType::tryFrom(enum) TypeError on edit: the hydrated
+        // `type` state arrives as a FormFieldType instance, not its string value.
+        // Before the fix, mounting the edit action threw a TypeError (500).
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+        $field = FormField::factory()->create([
+            'form_id' => $form->id,
+            'type' => FormFieldType::Select,
+            'label' => 'Talla de camiseta',
+            'sort_order' => 1,
+            'options' => ['S', 'M', 'L'],
+        ]);
+
+        $this->actingAs($this->superAdmin);
+
+        Livewire::test(FormFieldsRelationManager::class, [
+            'ownerRecord' => $form,
+            'pageClass' => EditForm::class,
+        ])
+            ->mountTableAction('edit', $field)
+            ->assertSuccessful();
+    }
+
+    public function test_editing_non_options_field_does_not_error(): void
+    {
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+        $field = FormField::factory()->create([
+            'form_id' => $form->id,
+            'type' => FormFieldType::TextShort,
+            'label' => 'Nombre completo',
+            'sort_order' => 1,
+        ]);
+
+        $this->actingAs($this->superAdmin);
+
+        Livewire::test(FormFieldsRelationManager::class, [
+            'ownerRecord' => $form,
+            'pageClass' => EditForm::class,
+        ])
+            ->mountTableAction('edit', $field)
+            ->assertSuccessful();
+    }
+
+    public function test_creating_options_field_via_relation_manager_succeeds(): void
+    {
+        $form = Form::factory()->create(['academic_year_id' => $this->year->id]);
+
+        $this->actingAs($this->superAdmin);
+
+        Livewire::test(FormFieldsRelationManager::class, [
+            'ownerRecord' => $form,
+            'pageClass' => EditForm::class,
+        ])
+            ->callTableAction('create', data: [
+                'type' => FormFieldType::Radio->value,
+                'label' => 'Color favorito',
+                'sort_order' => 1,
+                'is_required' => true,
+                'options' => "Rojo\nVerde\nAzul",
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('form_fields', [
+            'form_id' => $form->id,
+            'type' => FormFieldType::Radio->value,
+            'label' => 'Color favorito',
+        ]);
+    }
+
+    // ── Clonar formulario ─────────────────────────────────────────────────────
+
+    public function test_super_admin_can_clone_form_with_fields_and_targets_but_not_responses(): void
+    {
+        $grade = $this->createGrade();
+        $form = Form::factory()->forGrade()->create([
+            'academic_year_id' => $this->year->id,
+            'title' => 'Encuesta original',
+            'status' => FormStatus::Published,
+            'opens_at' => now()->subDays(10),
+            'closes_at' => now()->subDays(2),
+        ]);
+        $form->formTargetItems()->create([
+            'targetable_type' => Grade::class,
+            'targetable_id' => $grade->id,
+        ]);
+        FormField::factory()->create(['form_id' => $form->id, 'type' => FormFieldType::TextShort, 'sort_order' => 1]);
+        FormField::factory()->create(['form_id' => $form->id, 'type' => FormFieldType::Select, 'sort_order' => 2, 'options' => ['A', 'B']]);
+        FormResponse::factory()->create(['form_id' => $form->id, 'family_id' => Family::factory()->create()->id]);
+
+        Livewire::actingAs($this->superAdmin)
+            ->test(ListForms::class)
+            ->callTableAction('clonar', $form)
+            ->assertHasNoTableActionErrors();
+
+        $clone = Form::where('title', 'Encuesta original (copia)')->firstOrFail();
+        $this->assertSame(FormStatus::Draft, $clone->status);
+        $this->assertSame(2, $clone->formFields()->count());
+        $this->assertSame(1, $clone->formTargetItems()->count());
+        $this->assertSame(0, $clone->formResponses()->count());
+
+        // A clone starts as a fresh draft: no inherited scheduling dates, not published.
+        $this->assertNull($clone->opens_at);
+        $this->assertNull($clone->closes_at);
+        $this->assertFalse($clone->isOpenNow());
+        $this->assertSame($this->superAdmin->id, $clone->created_by);
+
+        // Original untouched
+        $this->assertSame(FormStatus::Published, $form->fresh()->status);
+        $this->assertSame('Encuesta original', $form->fresh()->title);
+        $this->assertNotNull($form->fresh()->opens_at);
+        $this->assertSame(1, $form->formResponses()->count());
+    }
+
+    public function test_admin_formularios_can_clone_form(): void
+    {
+        $form = Form::factory()->create([
+            'academic_year_id' => $this->year->id,
+            'title' => 'Plantilla',
+        ]);
+
+        Livewire::actingAs($this->adminFormularios)
+            ->test(ListForms::class)
+            ->callTableAction('clonar', $form)
+            ->assertHasNoTableActionErrors();
+
+        $this->assertDatabaseHas('forms', [
+            'title' => 'Plantilla (copia)',
+            'status' => FormStatus::Draft->value,
+        ]);
     }
 
     // ── Export ────────────────────────────────────────────────────────────────
