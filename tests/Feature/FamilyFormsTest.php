@@ -766,4 +766,184 @@ class FamilyFormsTest extends TestCase
             ->put(route('familia.forms.update', [$form1, $response]), ['fields' => []])
             ->assertForbidden();
     }
+
+    // ─── Per-student scope: independent responses per child (10 tests) ────────
+
+    public function test_per_student_form_lists_both_eligible_children(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $studentA] = $this->createFamilyUser();
+        $studentA->update(['first_name' => 'Ana', 'last_name' => 'Alfa']);
+        Student::factory()->create(['family_id' => $family->id, 'is_active' => true, 'first_name' => 'Bruno', 'last_name' => 'Beta']);
+
+        $form = $this->createOpenForm(['response_scope' => FormResponseScope::PerStudent]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.show', $form))
+            ->assertOk()
+            ->assertSee('Ana')
+            ->assertSee('Bruno');
+    }
+
+    public function test_responding_for_one_student_does_not_block_another(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $studentA] = $this->createFamilyUser();
+        $studentB = Student::factory()->create(['family_id' => $family->id, 'is_active' => true]);
+        $form = $this->createOpenForm(['response_scope' => FormResponseScope::PerStudent]);
+
+        $this->actingAs($user)
+            ->post(route('familia.forms.submit', $form), ['student_id' => $studentA->id, 'fields' => []])
+            ->assertRedirect(route('familia.forms.index'))
+            ->assertSessionHas('success');
+
+        $this->actingAs($user)
+            ->post(route('familia.forms.submit', $form), ['student_id' => $studentB->id, 'fields' => []])
+            ->assertRedirect(route('familia.forms.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('form_responses', [
+            'form_id' => $form->id,
+            'student_id' => $studentA->id,
+            'response_key' => 'student:'.$studentA->id,
+        ]);
+        $this->assertDatabaseHas('form_responses', [
+            'form_id' => $form->id,
+            'student_id' => $studentB->id,
+            'response_key' => 'student:'.$studentB->id,
+        ]);
+        $this->assertSame(2, FormResponse::where('form_id', $form->id)->count());
+    }
+
+    public function test_index_keeps_per_student_form_pending_until_all_children_answer(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $studentA] = $this->createFamilyUser();
+        Student::factory()->create(['family_id' => $family->id, 'is_active' => true, 'first_name' => 'Bruno']);
+        $form = $this->createOpenForm(['response_scope' => FormResponseScope::PerStudent, 'title' => 'Autorizacion salida']);
+
+        // Only student A has answered.
+        FormResponse::create([
+            'form_id' => $form->id,
+            'family_id' => $family->id,
+            'student_id' => $studentA->id,
+            'response_key' => 'student:'.$studentA->id,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.index'))
+            ->assertOk()
+            ->assertSee('Autorizacion salida')
+            ->assertSee('Bruno')          // pending indicator names the unanswered child
+            ->assertSee('Responder')      // still presented as a pending form
+            ->assertDontSee('Ver respuesta'); // not moved to the "responded" section
+    }
+
+    public function test_index_marks_per_student_form_complete_when_all_children_answer(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $studentA] = $this->createFamilyUser();
+        $studentB = Student::factory()->create(['family_id' => $family->id, 'is_active' => true]);
+        $form = $this->createOpenForm(['response_scope' => FormResponseScope::PerStudent]);
+
+        foreach ([$studentA, $studentB] as $student) {
+            FormResponse::create([
+                'form_id' => $form->id,
+                'family_id' => $family->id,
+                'student_id' => $student->id,
+                'response_key' => 'student:'.$student->id,
+                'submitted_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.index'))
+            ->assertOk()
+            ->assertSee('No tienes formularios pendientes') // pending section empty
+            ->assertSee('Ver respuestas');                  // responded with multiple answers
+    }
+
+    public function test_ver_respuesta_shows_only_that_students_answer(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $studentA] = $this->createFamilyUser();
+        $studentB = Student::factory()->create(['family_id' => $family->id, 'is_active' => true]);
+        $form = $this->createOpenForm(['response_scope' => FormResponseScope::PerStudent]);
+        $field = FormField::factory()->create([
+            'form_id' => $form->id,
+            'type' => FormFieldType::TextShort,
+            'label' => 'Comentario',
+            'sort_order' => 1,
+        ]);
+
+        $respA = FormResponse::create([
+            'form_id' => $form->id, 'family_id' => $family->id, 'student_id' => $studentA->id,
+            'response_key' => 'student:'.$studentA->id, 'submitted_at' => now(),
+        ]);
+        FormResponseAnswer::create(['form_response_id' => $respA->id, 'form_field_id' => $field->id, 'value' => 'Respuesta de Ana']);
+
+        $respB = FormResponse::create([
+            'form_id' => $form->id, 'family_id' => $family->id, 'student_id' => $studentB->id,
+            'response_key' => 'student:'.$studentB->id, 'submitted_at' => now(),
+        ]);
+        FormResponseAnswer::create(['form_response_id' => $respB->id, 'form_field_id' => $field->id, 'value' => 'Respuesta de Bruno']);
+
+        $this->actingAs($user)
+            ->get(route('familia.forms.responses.show', [$form, $respA]))
+            ->assertOk()
+            ->assertSee('Respuesta de Ana')
+            ->assertDontSee('Respuesta de Bruno');
+    }
+
+    public function test_editing_one_students_response_does_not_change_another(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $studentA] = $this->createFamilyUser();
+        $studentB = Student::factory()->create(['family_id' => $family->id, 'is_active' => true]);
+        $form = $this->createOpenForm(['response_scope' => FormResponseScope::PerStudent, 'allow_edit' => true]);
+        $field = FormField::factory()->create([
+            'form_id' => $form->id,
+            'type' => FormFieldType::TextShort,
+            'is_required' => false,
+            'sort_order' => 1,
+        ]);
+
+        $respA = FormResponse::create([
+            'form_id' => $form->id, 'family_id' => $family->id, 'student_id' => $studentA->id,
+            'response_key' => 'student:'.$studentA->id, 'submitted_at' => now(),
+        ]);
+        FormResponseAnswer::create(['form_response_id' => $respA->id, 'form_field_id' => $field->id, 'value' => 'Original A']);
+
+        $respB = FormResponse::create([
+            'form_id' => $form->id, 'family_id' => $family->id, 'student_id' => $studentB->id,
+            'response_key' => 'student:'.$studentB->id, 'submitted_at' => now(),
+        ]);
+        FormResponseAnswer::create(['form_response_id' => $respB->id, 'form_field_id' => $field->id, 'value' => 'Original B']);
+
+        $this->actingAs($user)
+            ->put(route('familia.forms.update', [$form, $respA]), ['fields' => [$field->id => 'Editado A']])
+            ->assertRedirect(route('familia.forms.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('form_response_answers', [
+            'form_response_id' => $respA->id, 'form_field_id' => $field->id, 'value' => 'Editado A',
+        ]);
+        // Sibling response is untouched.
+        $this->assertDatabaseHas('form_response_answers', [
+            'form_response_id' => $respB->id, 'form_field_id' => $field->id, 'value' => 'Original B',
+        ]);
+    }
+
+    public function test_per_family_form_still_allows_only_one_response(): void
+    {
+        ['user' => $user, 'family' => $family] = $this->createFamilyUser();
+        $form = $this->createOpenForm(['response_scope' => FormResponseScope::PerFamily]);
+
+        $this->actingAs($user)
+            ->post(route('familia.forms.submit', $form), ['fields' => []])
+            ->assertRedirect(route('familia.forms.index'))
+            ->assertSessionHas('success');
+
+        $this->actingAs($user)
+            ->post(route('familia.forms.submit', $form), ['fields' => []])
+            ->assertRedirect()
+            ->assertSessionHasErrors('form');
+
+        $this->assertSame(1, FormResponse::where('form_id', $form->id)->count());
+    }
 }

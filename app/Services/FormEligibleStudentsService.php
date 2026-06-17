@@ -3,15 +3,72 @@
 namespace App\Services;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\FormResponseScope;
 use App\Enums\FormTargetType;
 use App\Models\Enrollment;
 use App\Models\Family;
 use App\Models\Form;
+use App\Models\FormResponse;
 use App\Models\Student;
 use Illuminate\Support\Collection;
 
 class FormEligibleStudentsService
 {
+    /**
+     * Returns true when the family has fully completed the form.
+     *
+     * - per_family: completed when at least one response exists.
+     * - per_student: completed only when every eligible active student has a
+     *   response. Responding for one student does NOT complete the form while
+     *   other eligible students are still pending.
+     *
+     * @param  Collection<int, FormResponse>  $formResponses  Responses for THIS form by the family
+     */
+    public function isFormCompletedByFamily(Form $form, Family $family, Collection $formResponses): bool
+    {
+        if ($form->response_scope !== FormResponseScope::PerStudent) {
+            return $formResponses->isNotEmpty();
+        }
+
+        $eligible = $this->getEligibleStudents($form, $family);
+
+        // No eligible students: nothing to answer, so it is not pending.
+        if ($eligible->isEmpty()) {
+            return true;
+        }
+
+        $answeredStudentIds = $formResponses
+            ->pluck('student_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return $eligible->every(fn (Student $student) => in_array((int) $student->id, $answeredStudentIds, true));
+    }
+
+    /**
+     * Returns the eligible students that still have no response for the form.
+     *
+     * @param  Collection<int, FormResponse>  $formResponses  Responses for THIS form by the family
+     * @return Collection<int, Student>
+     */
+    public function getPendingStudents(Form $form, Family $family, Collection $formResponses): Collection
+    {
+        if ($form->response_scope !== FormResponseScope::PerStudent) {
+            return collect();
+        }
+
+        $answeredStudentIds = $formResponses
+            ->pluck('student_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return $this->getEligibleStudents($form, $family)
+            ->reject(fn (Student $student) => in_array((int) $student->id, $answeredStudentIds, true))
+            ->values();
+    }
+
     /**
      * Returns the subset of the family's active students that are eligible
      * for the given form, based on its target_type and target items.

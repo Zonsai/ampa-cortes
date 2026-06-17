@@ -29,6 +29,13 @@
                     @if($form->description)
                         <div class="family-resource-card__desc">{{ \Illuminate\Support\Str::limit($form->description, 120) }}</div>
                     @endif
+                    @php $pendingStudents = $pendingStudentsByFormId[$form->id] ?? collect(); @endphp
+                    @if($pendingStudents->isNotEmpty())
+                        <div class="fam-muted" style="font-size: .8rem; margin-top: 8px;">
+                            Por alumno/a — faltan {{ $pendingStudents->count() }}:
+                            {{ $pendingStudents->map(fn ($s) => $s->first_name)->join(', ') }}
+                        </div>
+                    @endif
                     <div class="fam-row-wrap" style="margin-top: 10px; justify-content: space-between;">
                         <span style="font-size: .8rem;" class="fam-muted">
                             @if($form->closes_at)

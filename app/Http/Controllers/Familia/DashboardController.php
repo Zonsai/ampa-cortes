@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Familia;
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Family;
+use App\Models\Form;
 use App\Models\FormResponse;
 use App\Services\ConsentStatusService;
+use App\Services\FormEligibleStudentsService;
 use App\Services\FormVisibilityService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,6 +18,7 @@ class DashboardController extends Controller
     public function __construct(
         private readonly ConsentStatusService $consentStatusService,
         private readonly FormVisibilityService $formVisibilityService,
+        private readonly FormEligibleStudentsService $formEligibleStudentsService,
     ) {}
 
     public function __invoke(Request $request): View
@@ -55,18 +58,27 @@ class DashboardController extends Controller
     }
 
     /**
-     * Number of open forms targeted at the family that still have no response.
-     * Mirrors the "pending" grouping used in FormsController@index without
-     * altering any form business logic.
+     * Number of open forms targeted at the family that are not yet complete.
+     * Mirrors the "pending" grouping used in FormsController@index: a per-student
+     * form stays pending until every eligible student has responded.
      */
     private function countPendingFormsForFamily(Family $family): int
     {
         $openForms = $this->formVisibilityService->getOpenFormsForFamily($family);
 
-        $respondedFormIds = FormResponse::where('family_id', $family->id)
-            ->pluck('form_id')
-            ->unique();
+        if ($openForms->isEmpty()) {
+            return 0;
+        }
 
-        return $openForms->reject(fn ($form) => $respondedFormIds->contains($form->id))->count();
+        $responsesByFormId = FormResponse::where('family_id', $family->id)
+            ->whereIn('form_id', $openForms->pluck('id'))
+            ->get()
+            ->groupBy('form_id');
+
+        return $openForms->reject(fn (Form $form) => $this->formEligibleStudentsService->isFormCompletedByFamily(
+            $form,
+            $family,
+            $responsesByFormId->get($form->id, collect()),
+        ))->count();
     }
 }

@@ -62,7 +62,10 @@ class FormFieldsRelationManager extends RelationManager
                 TextInput::make('label')
                     ->label('Etiqueta')
                     ->maxLength(255)
-                    ->required(),
+                    ->required()
+                    ->helperText(fn (Get $get): ?string => self::resolveType($get('type')) === FormFieldType::Checkbox
+                        ? 'La etiqueta será el texto de la casilla. Este tipo no necesita opciones.'
+                        : null),
                 Textarea::make('description')
                     ->label('Descripción/Ayuda')
                     ->rows(2),

@@ -27,24 +27,40 @@ class FormsController extends Controller
         $respondedResponses = FormResponse::where('family_id', $family->id)
             ->get();
 
-        $respondedFormIds = $respondedResponses->pluck('form_id')->unique();
+        // Responses grouped by form_id for "Ver respuesta" links in the index
+        $responsesByFormId = $respondedResponses->groupBy('form_id');
 
-        $pendingForms = $openForms->filter(fn ($f) => ! $respondedFormIds->contains($f->id));
-        $respondedOpenForms = $openForms->filter(fn ($f) => $respondedFormIds->contains($f->id));
+        // A per-student form stays pending until every eligible student has
+        // responded; a per-family form is complete once any response exists.
+        $isComplete = fn (Form $form): bool => $this->eligibleStudentsService->isFormCompletedByFamily(
+            $form,
+            $family,
+            $responsesByFormId->get($form->id, collect()),
+        );
+
+        $pendingForms = $openForms->reject($isComplete)->values();
+        $respondedOpenForms = $openForms->filter($isComplete)->values();
 
         $closedRespondedForms = Form::query()
-            ->whereIn('id', $respondedFormIds)
+            ->whereIn('id', $respondedResponses->pluck('form_id')->unique())
             ->whereNotIn('id', $openForms->pluck('id'))
             ->get();
 
-        // Responses grouped by form_id for "Ver respuesta" links in the index
-        $responsesByFormId = $respondedResponses->groupBy('form_id');
+        // Eligible students still pending per form (per_student scope) for clear messaging.
+        $pendingStudentsByFormId = $pendingForms->mapWithKeys(fn (Form $form) => [
+            $form->id => $this->eligibleStudentsService->getPendingStudents(
+                $form,
+                $family,
+                $responsesByFormId->get($form->id, collect()),
+            ),
+        ]);
 
         return view('familia.forms.index', compact(
             'pendingForms',
             'respondedOpenForms',
             'closedRespondedForms',
             'responsesByFormId',
+            'pendingStudentsByFormId',
         ));
     }
 
