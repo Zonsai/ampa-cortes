@@ -46,7 +46,13 @@ Si el document root apunta a la raíz, el archivo `index.php` no se encontrará 
 
 ## Assets / public/build
 
-Los assets compilados (CSS/JS) se generan con Vite y se depositan en `public/build`. Esta carpeta está en `.gitignore` por defecto. Hay tres estrategias posibles:
+Los assets compilados (CSS/JS) se generan con **Vite + Tailwind v4** (`@tailwindcss/vite`) y se depositan en `public/build`.
+
+> **Estado actual del repositorio:** `public/build` está en `.gitignore` (línea `/public/build`), por lo que **no se versiona**. Tailwind v4 escanea las clases en tiempo de compilación, así que **el build debe regenerarse y desplegarse cada vez que cambian estilos/plantillas**. La zona familiar usa CSS propio incrustado en su layout y no depende de este build; el resto del panel (Filament) y los estilos base sí dependen de `public/build`.
+
+> **Recomendación para este proyecto:** **Opción 1** (compilar en local y subir `public/build`) si el despliegue es manual/SFTP sin CI; **Opción 3** (CI/CD) si en el futuro hay pipeline. Evitar instalar Node en el servidor de producción.
+
+Hay tres estrategias posibles:
 
 ### Opción 1 — Compilar localmente y subir `public/build` (recomendada para Plesk sin CI)
 
@@ -120,16 +126,27 @@ php artisan ampa:create-admin
 php artisan storage:link
 # Los logos se almacenan en storage/app/public/branding/
 # El servidor debe servir /storage vía symlink (ya creado con el comando anterior)
+# Verificar después: que https://tu-dominio.com/storage/ responde y, si hay logo,
+# que https://tu-dominio.com/storage/branding/<archivo> carga la imagen.
 
 # 8. Cachés de producción
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan event:cache
+# Atajo: 'php artisan optimize' ejecuta config:cache + route:cache + más en un solo paso.
+php artisan optimize
+# (Equivalente granular, si se prefiere por separado:)
+#   php artisan config:cache
+#   php artisan route:cache
+#   php artisan view:cache
+#   php artisan event:cache
 
-# 9. Assets (si no vienen en el repositorio ni en el despliegue)
+# 9. Verificar que existe al menos un super_admin (no debe quedar el panel sin acceso)
+php artisan tinker --execute "echo \App\Models\User::role('super_admin')->where('is_active', true)->count();"
+# Debe imprimir >= 1.
+
+# 10. Assets (si no vienen en el repositorio ni en el despliegue)
 # npm ci && npm run build   ← solo si hay Node disponible en el servidor
 ```
+
+> **Nota sobre `optimize`:** si se cambian variables de entorno tras cachear, ejecutar `php artisan optimize:clear` y volver a cachear. Nunca cachear configuración con `APP_DEBUG=true`.
 
 ---
 
@@ -259,3 +276,93 @@ php artisan migrate:fresh --seed
 # O solo los datos visuales, sin recrear la BD:
 php artisan db:seed --class=LocalDemoSeeder
 ```
+
+---
+
+## Storage y logos
+
+- Los logos de marca se guardan en **`storage/app/public/branding/`** y se sirven a través del symlink `public/storage` → `storage/app/public` (creado con `php artisan storage:link`).
+- Tras el `storage:link`, comprobar que la URL pública responde: `https://tu-dominio.com/storage/branding/<archivo>` debe cargar la imagen.
+- Si **no hay logo configurado**, la aplicación usa un **fallback** con las iniciales del nombre del AMPA (no se produce error ni imagen rota).
+- La carpeta `storage/` debe ser **escribible** por el usuario que ejecuta PHP (ver [Permisos de escritura](#permisos-de-escritura)).
+- `public/storage` está en `.gitignore`: el symlink se crea en cada servidor; no se versiona.
+
+---
+
+## Backups
+
+Antes de pasar a producción y de forma periódica:
+
+- [ ] **Base de datos:** copia regular de la BD (mysqldump programado o backups de Plesk). Es el dato crítico (familias, inscripciones, consentimientos, respuestas).
+- [ ] **`storage/app/public`:** copia de los archivos subidos (logos y futuros adjuntos). No está en git.
+- [ ] Verificar que el backup se puede **restaurar** (probar una restauración en staging al menos una vez).
+- [ ] **No** es necesario respaldar `public/build` ni `vendor/` (se regeneran).
+
+---
+
+## Checklist de demo (AMPA)
+
+Preparación para enseñar el portal al AMPA (entorno local o staging, **sin datos reales**):
+
+- [ ] Cargar datos mínimos/demo: `php artisan migrate:fresh --seed` o `php artisan db:seed --class=LocalDemoSeeder` (solo en `local`).
+- [ ] Compilar assets: `npm run build` y verificar que `public/build` existe.
+- [ ] Revisar **branding** (nombre del AMPA, colores, logo) en el panel admin → Configuración.
+- [ ] Confirmar un **usuario admin** (`super_admin`) y poder entrar en `/admin`.
+- [ ] Confirmar un **usuario familia** vinculado a un tutor con familia y alumno/a.
+- [ ] **Login familiar:** entrar en `/familia/login` y comprobar redirección al dashboard.
+- [ ] **Dashboard familiar:** ver tarjetas de resumen, avisos y accesos rápidos.
+- [ ] **Extraescolar (flujo completo):**
+  - [ ] Solicitud desde la familia (queda en *Solicitud enviada / Pending*).
+  - [ ] Confirmación desde el admin.
+  - [ ] Marcar *Pendiente de pago*.
+  - [ ] Registrar pago (*Pago registrado*).
+- [ ] **Formularios:**
+  - [ ] Formulario **por familia** (una respuesta).
+  - [ ] Formulario **por alumno/a** con **dos hijos** (responder uno deja el otro pendiente; al responder ambos, queda completo).
+  - [ ] **Clonar** un formulario (queda en borrador, copia campos y público, sin respuestas).
+- [ ] **Consentimientos:**
+  - [ ] **Aceptar** un consentimiento pendiente.
+  - [ ] **Rechazar** uno rechazable.
+  - [ ] **Revocar** uno aceptado revocable.
+  - [ ] **Volver a aceptar** uno revocado.
+- [ ] Revisar **Usuarios y accesos familiares** (panel → Configuración → Usuarios; acción "Crear acceso familiar" en Tutores).
+- [ ] Revisar **vista móvil básica** de la zona familiar (navegación, tarjetas, botones).
+
+---
+
+## Checklist de producción (pre-lanzamiento)
+
+Verificación obligatoria **antes** de abrir el portal a usuarios reales:
+
+**Configuración (`.env` definitivo):**
+- [ ] `APP_ENV=production`
+- [ ] `APP_DEBUG=false` *(crítico)*
+- [ ] `APP_KEY` generada (`php artisan key:generate`)
+- [ ] `APP_URL=https://dominio-real`
+- [ ] `APP_LOCALE=es` y `APP_FALLBACK_LOCALE=es`
+- [ ] `SESSION_SECURE_COOKIE=true` (requiere HTTPS activo)
+- [ ] Credenciales de BD de producción (MySQL/MariaDB)
+
+**Infraestructura:**
+- [ ] **HTTPS** con certificado válido.
+- [ ] Document root apuntando a `/public`.
+- [ ] Permisos de escritura en `storage/` y `bootstrap/cache`.
+- [ ] `php artisan storage:link` ejecutado y `/storage/...` accesible.
+- [ ] `public/build` presente y actualizado (assets compilados).
+- [ ] Cachés generadas (`php artisan optimize`).
+- [ ] **Backups** de BD y de `storage/app/public` configurados.
+
+**Datos y acceso:**
+- [ ] `RoleSeeder` y `AppSettingsSeeder` ejecutados (idempotentes).
+- [ ] **No** se han ejecutado seeders demo (`AdminUserSeeder`, `DemoDataSeeder`, `LocalDemoSeeder`).
+- [ ] Al menos **un `super_admin` activo** (verificado con el comando del paso 9).
+
+**Pruebas humo en producción:**
+- [ ] **Login admin** correcto en `/admin`.
+- [ ] **Login familia** correcto en `/familia/login`.
+- [ ] **Escritura en storage:** subir un logo desde el panel y verlo servido por `/storage/branding/...`.
+- [ ] **Una inscripción** de extraescolar de prueba (y revertirla/limpiarla).
+- [ ] **Un formulario** de prueba (responder y ver respuesta).
+- [ ] **Un consentimiento** de prueba (aceptar).
+
+> Tras validar, eliminar cualquier dato de prueba creado durante las pruebas de humo.
