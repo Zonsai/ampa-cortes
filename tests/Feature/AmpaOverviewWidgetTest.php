@@ -22,7 +22,11 @@ use App\Models\Guardian;
 use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Filament\Facades\Filament;
+use Filament\Widgets\AccountWidget;
+use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -216,5 +220,41 @@ class AmpaOverviewWidgetTest extends TestCase
             ->test(AmpaOverviewWidget::class)
             ->assertSee('Consentimientos pendientes')
             ->assertSee('Consentimientos aceptados');
+    }
+
+    // ─── Dashboard composition (clean dashboard) ──────────────────────────────
+
+    public function test_admin_dashboard_shows_overview_widget_with_links(): void
+    {
+        $response = $this->actingAs($this->userWithRole('super_admin'))->get('/admin');
+
+        $response->assertOk();
+        $response->assertSee('Resumen del AMPA');
+        $response->assertSee('Curso académico');
+        // Stats link to their resource (super_admin can access Families).
+        $response->assertSee('/admin/families', false);
+    }
+
+    public function test_admin_dashboard_does_not_show_filament_info_widget(): void
+    {
+        $this->actingAs($this->userWithRole('super_admin'))
+            ->get('/admin')
+            ->assertOk()
+            ->assertDontSee('GitHub')        // FilamentInfoWidget links removed
+            ->assertDontSee('Documentation');
+    }
+
+    public function test_default_account_and_info_widgets_are_not_registered(): void
+    {
+        $widgets = Filament::getPanel('admin')->getWidgets();
+
+        $this->assertContains(AmpaOverviewWidget::class, $widgets);
+        $this->assertNotContains(AccountWidget::class, $widgets);
+        $this->assertNotContains(FilamentInfoWidget::class, $widgets);
+    }
+
+    public function test_admin_logout_route_still_exists(): void
+    {
+        $this->assertTrue(Route::has('filament.admin.auth.logout'));
     }
 }

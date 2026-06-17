@@ -5,6 +5,12 @@ namespace App\Filament\Widgets;
 use App\Enums\ConsentResponseStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\FormStatus;
+use App\Filament\Resources\AcademicYears\AcademicYearResource;
+use App\Filament\Resources\ConsentTypes\ConsentTypeResource;
+use App\Filament\Resources\Enrollments\EnrollmentResource;
+use App\Filament\Resources\Families\FamilyResource;
+use App\Filament\Resources\Forms\FormResource;
+use App\Filament\Resources\Students\StudentResource;
 use App\Models\AcademicYear;
 use App\Models\ConsentResponse;
 use App\Models\Enrollment;
@@ -68,17 +74,21 @@ class AmpaOverviewWidget extends BaseWidget
 
     private function academicYearStat(?AcademicYear $activeYear): Stat
     {
+        $url = $this->resourceUrl(AcademicYearResource::class);
+
         if ($activeYear === null) {
             return Stat::make('Curso académico', 'Sin curso activo')
                 ->description('Configura un año académico activo en Ajustes')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color('danger');
+                ->color('danger')
+                ->url($url);
         }
 
         return Stat::make('Curso académico', $activeYear->name)
             ->description('Curso activo')
             ->descriptionIcon('heroicon-m-academic-cap')
-            ->color('primary');
+            ->color('primary')
+            ->url($url);
     }
 
     /** @return array<int, Stat> */
@@ -103,12 +113,14 @@ class AmpaOverviewWidget extends BaseWidget
             Stat::make('Familias', (string) $totalFamilies)
                 ->description("{$memberFamilies} socias AMPA ({$memberRatio}%)")
                 ->descriptionIcon('heroicon-m-home')
-                ->color('primary'),
+                ->color('primary')
+                ->url($this->resourceUrl(FamilyResource::class)),
 
             Stat::make('Alumnos/as', (string) $activeStudents)
                 ->description("{$withClassroom} con clase · {$withoutClassroom} sin clase")
                 ->descriptionIcon('heroicon-m-users')
-                ->color($withoutClassroom > 0 ? 'warning' : 'success'),
+                ->color($withoutClassroom > 0 ? 'warning' : 'success')
+                ->url($this->resourceUrl(StudentResource::class)),
         ];
     }
 
@@ -128,26 +140,32 @@ class AmpaOverviewWidget extends BaseWidget
         $pendingPayment = (clone $base())->where('status', EnrollmentStatus::PendingPayment->value)->count();
         $pendingAmount = (float) (clone $base())->where('status', EnrollmentStatus::PendingPayment->value)->sum('amount');
 
+        $url = $this->resourceUrl(EnrollmentResource::class);
+
         return [
             Stat::make('Solicitudes pendientes', (string) $pending)
                 ->description('Extraescolares por confirmar')
                 ->descriptionIcon('heroicon-m-inbox-arrow-down')
-                ->color($pending > 0 ? 'info' : 'gray'),
+                ->color($pending > 0 ? 'info' : 'gray')
+                ->url($url),
 
             Stat::make('Inscritos/as', (string) $enrolled)
                 ->description('Confirmados (inscritos y pagados)')
                 ->descriptionIcon('heroicon-m-check-circle')
-                ->color('success'),
+                ->color('success')
+                ->url($url),
 
             Stat::make('Lista de espera', (string) $waitlist)
                 ->description('A la espera de plaza')
                 ->descriptionIcon('heroicon-m-queue-list')
-                ->color($waitlist > 0 ? 'warning' : 'gray'),
+                ->color($waitlist > 0 ? 'warning' : 'gray')
+                ->url($url),
 
             Stat::make('Pagos pendientes', (string) $pendingPayment)
                 ->description($this->formatMoney($pendingAmount).' pendientes de cobro')
                 ->descriptionIcon('heroicon-m-banknotes')
-                ->color($pendingPayment > 0 ? 'warning' : 'gray'),
+                ->color($pendingPayment > 0 ? 'warning' : 'gray')
+                ->url($url),
         ];
     }
 
@@ -179,26 +197,46 @@ class AmpaOverviewWidget extends BaseWidget
             $pendingDescription = "{$pendingImageReview} requieren revisión de imagen";
         }
 
+        $formsUrl = $this->resourceUrl(FormResource::class);
+        $consentsUrl = $this->resourceUrl(ConsentTypeResource::class);
+
         return [
             Stat::make('Formularios abiertos', (string) $openFormsCount)
                 ->description("{$totalResponses} respuestas recibidas")
                 ->descriptionIcon('heroicon-m-document-text')
-                ->color('primary'),
+                ->color('primary')
+                ->url($formsUrl),
 
             Stat::make('Consentimientos pendientes', (string) $pendingConsents)
                 ->description($pendingDescription)
                 ->descriptionIcon('heroicon-m-shield-exclamation')
-                ->color($pendingConsents > 0 ? 'warning' : 'gray'),
+                ->color($pendingConsents > 0 ? 'warning' : 'gray')
+                ->url($consentsUrl),
 
             Stat::make('Consentimientos aceptados', (string) $acceptedConsents)
                 ->description("{$rejectedConsents} rechazados · {$revokedConsents} revocados")
                 ->descriptionIcon('heroicon-m-shield-check')
-                ->color('success'),
+                ->color('success')
+                ->url($consentsUrl),
         ];
     }
 
     private function formatMoney(float $amount): string
     {
         return number_format($amount, 2, ',', '.').' €';
+    }
+
+    /**
+     * Index URL of a Filament resource, but only when the current user can access
+     * it. Wrapped in rescue() so a missing panel context (e.g. isolated widget
+     * tests) or any routing error simply yields an unlinked stat instead of failing.
+     */
+    private function resourceUrl(string $resourceClass): ?string
+    {
+        return rescue(
+            fn (): ?string => $resourceClass::canAccess() ? $resourceClass::getUrl() : null,
+            null,
+            report: false,
+        );
     }
 }
