@@ -14,6 +14,7 @@ use App\Enums\FormFieldType;
 use App\Enums\FormResponseScope;
 use App\Enums\FormStatus;
 use App\Enums\FormTargetType;
+use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use App\Models\AcademicYear;
 use App\Models\ActivityGroup;
@@ -34,6 +35,7 @@ use App\Models\Guardian;
 use App\Models\SchoolStage;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\AppSettings;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -47,15 +49,28 @@ class LocalDemoSeeder extends Seeder
             return;
         }
 
+        $this->seedBranding();
         $this->seedUsers();
         $year = $this->ensureAcademicStructure();
         [$garcia, $martinez] = $this->seedFamilies();
         [$pablo, $laura, $lucia, $juan] = $this->seedStudents($garcia, $martinez, $year);
         $this->seedExtracurricular($garcia, $martinez, $pablo, $laura, $juan, $year);
-        $this->seedForm($garcia, $year);
+        $this->seedForms($garcia, $pablo, $laura, $year);
         $this->seedConsents($garcia, $martinez, $pablo, $laura, $lucia, $juan);
 
         $this->command?->info('LocalDemoSeeder completado correctamente.');
+    }
+
+    // -------------------------------------------------------------------------
+    // Branding (marca configurada para la demo)
+    // -------------------------------------------------------------------------
+
+    private function seedBranding(): void
+    {
+        AppSettings::set('ampa_name', 'AMPA Cortés de Aragón');
+        AppSettings::set('school_name', 'CEIP Cortés de Aragón');
+        AppSettings::set('primary_color', '#4f46e5');
+        AppSettings::set('accent_color', '#0f766e');
     }
 
     // -------------------------------------------------------------------------
@@ -298,9 +313,54 @@ class LocalDemoSeeder extends Seeder
             EnrollmentStatus::Waitlist, 25.00, PriceType::Member, 1
         );
 
-        // Juan (cross-family, no socio): inscrito
+        // Juan (cross-family, no socio): pago registrado
         $this->ensureEnrollment($juan, $martinez, $activity, $group, $year,
-            EnrollmentStatus::Enrolled, 35.00, PriceType::NonMember
+            EnrollmentStatus::Paid, 35.00, PriceType::NonMember
+        );
+
+        // Segunda actividad para mostrar "solicitud pendiente" y "pendiente de pago"
+        $multideporte = ExtracurricularActivity::firstOrCreate(
+            ['academic_year_id' => $year->id, 'name' => 'Multideporte'],
+            [
+                'short_description' => 'Iniciación a varios deportes para primaria.',
+                'status' => ActivityStatus::Published,
+                'is_visible_for_families' => true,
+                'requires_ampa_membership' => false,
+            ]
+        );
+
+        if (! $multideporte->wasRecentlyCreated) {
+            $multideporte->update(['status' => ActivityStatus::Published, 'is_visible_for_families' => true]);
+        }
+
+        $multideporteGroup = ActivityGroup::firstOrCreate(
+            ['activity_id' => $multideporte->id, 'name' => 'Martes y jueves'],
+            [
+                'weekdays' => [2, 4],
+                'starts_at' => '16:00:00',
+                'ends_at' => '17:00:00',
+                'max_spots' => 12,
+                'price_member' => 20.00,
+                'price_non_member' => 30.00,
+                'provider' => 'Club Deportivo Cortés',
+                'location' => 'Pabellón',
+                'status' => ActivityGroupStatus::Open,
+            ]
+        );
+
+        $multideporteGradeIds = array_filter([$grade1?->id, $grade2?->id]);
+        if ($multideporteGradeIds) {
+            $multideporteGroup->grades()->syncWithoutDetaching($multideporteGradeIds);
+        }
+
+        // Pablo: solicitud pendiente (demuestra la solicitud familiar sin confirmar)
+        $this->ensureEnrollment($pablo, $garcia, $multideporte, $multideporteGroup, $year,
+            EnrollmentStatus::Pending, 20.00, PriceType::Member
+        );
+
+        // Laura: pendiente de pago (inscrita, esperando el pago)
+        $this->ensureEnrollment($laura, $garcia, $multideporte, $multideporteGroup, $year,
+            EnrollmentStatus::PendingPayment, 20.00, PriceType::Member
         );
     }
 
@@ -326,6 +386,12 @@ class LocalDemoSeeder extends Seeder
             return;
         }
 
+        $occupies = in_array($status, [
+            EnrollmentStatus::Enrolled,
+            EnrollmentStatus::PendingPayment,
+            EnrollmentStatus::Paid,
+        ], true);
+
         Enrollment::create([
             'student_id' => $student->id,
             'family_id' => $family->id,
@@ -334,7 +400,9 @@ class LocalDemoSeeder extends Seeder
             'academic_year_id' => $year->id,
             'status' => $status,
             'registered_at' => now()->subDays(3),
-            'enrolled_at' => $status === EnrollmentStatus::Enrolled ? now()->subDays(3) : null,
+            'enrolled_at' => $occupies ? now()->subDays(3) : null,
+            'paid_at' => $status === EnrollmentStatus::Paid ? now()->subDay() : null,
+            'payment_method' => $status === EnrollmentStatus::Paid ? PaymentMethod::BankTransfer : null,
             'amount' => $amount,
             'price_type' => $priceType,
             'waitlist_position' => $waitlistPosition,
@@ -345,7 +413,7 @@ class LocalDemoSeeder extends Seeder
     // Formulario
     // -------------------------------------------------------------------------
 
-    private function seedForm(Family $garcia, AcademicYear $year): void
+    private function seedForms(Family $garcia, Student $pablo, Student $laura, AcademicYear $year): void
     {
         $form = Form::firstOrCreate(
             ['title' => 'Excursión fin de curso', 'academic_year_id' => $year->id],
@@ -432,6 +500,148 @@ class LocalDemoSeeder extends Seeder
 
         // Referencia para silenciar el warning de variable no usada (fieldInfo solo es demo visual)
         unset($fieldInfo);
+
+        $this->seedPerStudentForm($garcia, $pablo, $laura, $year);
+        $this->seedClosedForm($garcia, $year);
+    }
+
+    /**
+     * Formulario "por alumno/a": Pablo respondido, Laura pendiente.
+     * Cubre los tipos TextLong (textarea), Select y Checkbox (casilla única).
+     */
+    private function seedPerStudentForm(Family $garcia, Student $pablo, Student $laura, AcademicYear $year): void
+    {
+        $form = Form::firstOrCreate(
+            ['title' => 'Autorización salida a la piscina', 'academic_year_id' => $year->id],
+            [
+                'description' => 'Autorización por alumno/a para la salida a la piscina municipal.',
+                'status' => FormStatus::Published,
+                'response_scope' => FormResponseScope::PerStudent,
+                'target_type' => FormTargetType::ByGrade,
+                'allow_edit' => true,
+                'opens_at' => now()->subDays(5),
+                'closes_at' => now()->addDays(20),
+            ]
+        );
+
+        if (! $form->wasRecentlyCreated) {
+            $form->update(['status' => FormStatus::Published]);
+        }
+
+        // Público: 1º y 2º de Primaria (Pablo y Laura; Lucía queda fuera por no tener clase)
+        foreach (['1º Primaria', '2º Primaria'] as $gradeName) {
+            $grade = Grade::firstWhere('name', $gradeName);
+            if ($grade) {
+                $form->formTargetItems()->firstOrCreate([
+                    'targetable_type' => Grade::class,
+                    'targetable_id' => $grade->id,
+                ]);
+            }
+        }
+
+        $fieldObs = FormField::firstOrCreate(
+            ['form_id' => $form->id, 'label' => 'Observaciones médicas'],
+            [
+                'type' => FormFieldType::TextLong,
+                'description' => 'Indica cualquier observación médica relevante para la actividad acuática.',
+                'is_required' => false,
+                'sort_order' => 1,
+            ]
+        );
+
+        $fieldSwim = FormField::firstOrCreate(
+            ['form_id' => $form->id, 'label' => '¿Sabe nadar?'],
+            [
+                'type' => FormFieldType::Select,
+                'is_required' => true,
+                'sort_order' => 2,
+                'options' => ['Sí', 'No', 'Un poco'],
+            ]
+        );
+
+        $fieldAuth = FormField::firstOrCreate(
+            ['form_id' => $form->id, 'label' => 'Autorizo la salida a la piscina'],
+            [
+                'type' => FormFieldType::Checkbox,
+                'description' => 'Marca la casilla para autorizar la salida.',
+                'is_required' => true,
+                'sort_order' => 3,
+            ]
+        );
+
+        // Pablo: respondido — Laura: pendiente (demuestra el flujo por alumno/a)
+        $responseKey = FormResponse::buildResponseKey($garcia, $pablo);
+        $response = FormResponse::firstOrCreate(
+            ['form_id' => $form->id, 'family_id' => $garcia->id, 'response_key' => $responseKey],
+            ['student_id' => $pablo->id, 'submitted_at' => now()->subDay()]
+        );
+
+        if ($response->wasRecentlyCreated) {
+            FormResponseAnswer::create([
+                'form_response_id' => $response->id,
+                'form_field_id' => $fieldObs->id,
+                'value' => 'Sin observaciones.',
+            ]);
+            FormResponseAnswer::create([
+                'form_response_id' => $response->id,
+                'form_field_id' => $fieldSwim->id,
+                'value' => 'Sí',
+            ]);
+            FormResponseAnswer::create([
+                'form_response_id' => $response->id,
+                'form_field_id' => $fieldAuth->id,
+                'value' => '1',
+            ]);
+        }
+
+        // Referencia explícita a Laura (queda pendiente: no se crea respuesta para ella)
+        unset($laura);
+    }
+
+    /**
+     * Formulario cerrado con respuesta, para mostrar la sección "Cerrados".
+     */
+    private function seedClosedForm(Family $garcia, AcademicYear $year): void
+    {
+        $form = Form::firstOrCreate(
+            ['title' => 'Reunión de inicio de curso', 'academic_year_id' => $year->id],
+            [
+                'description' => 'Confirmación de asistencia a la reunión de inicio de curso.',
+                'status' => FormStatus::Closed,
+                'response_scope' => FormResponseScope::PerFamily,
+                'target_type' => FormTargetType::AllFamilies,
+                'allow_edit' => false,
+                'opens_at' => now()->subDays(40),
+                'closes_at' => now()->subDays(10),
+            ]
+        );
+
+        if (! $form->wasRecentlyCreated) {
+            $form->update(['status' => FormStatus::Closed]);
+        }
+
+        $field = FormField::firstOrCreate(
+            ['form_id' => $form->id, 'label' => '¿Asistirá a la reunión?'],
+            [
+                'type' => FormFieldType::YesNo,
+                'is_required' => true,
+                'sort_order' => 1,
+            ]
+        );
+
+        $responseKey = FormResponse::buildResponseKey($garcia);
+        $response = FormResponse::firstOrCreate(
+            ['form_id' => $form->id, 'family_id' => $garcia->id, 'response_key' => $responseKey],
+            ['submitted_at' => now()->subDays(35)]
+        );
+
+        if ($response->wasRecentlyCreated) {
+            FormResponseAnswer::create([
+                'form_response_id' => $response->id,
+                'form_field_id' => $field->id,
+                'value' => '1',
+            ]);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -504,7 +714,8 @@ class LocalDemoSeeder extends Seeder
         $this->ensureConsentResponse($type2, $version2, $garcia, $pablo, ConsentResponseStatus::Accepted);
         $this->ensureConsentResponse($type2, $version2, $garcia, $laura, ConsentResponseStatus::Pending);
         $this->ensureConsentResponse($type2, $version2, $garcia, $lucia, ConsentResponseStatus::Revoked);
-        $this->ensureConsentResponse($type2, $version2, $martinez, $juan, ConsentResponseStatus::Pending);
+        // Martínez rechaza el uso de imagen para Juan (muestra el estado "rechazado")
+        $this->ensureConsentResponse($type2, $version2, $martinez, $juan, ConsentResponseStatus::Rejected);
     }
 
     private function ensureConsentPublished(ConsentType $type, ConsentVersion $version): void
