@@ -3,7 +3,10 @@
 namespace App\Actions\Enrollments;
 
 use App\Enums\EnrollmentStatus;
+use App\Models\AuditLog;
 use App\Models\Enrollment;
+use App\Services\AuditLogger;
+use App\Support\EnrollmentAuditData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -28,6 +31,8 @@ class CancelEnrollmentAction
                 ]);
             }
 
+            $statusBefore = $enrollment->status;
+
             $enrollment->update([
                 'status' => EnrollmentStatus::Cancelled,
                 'ended_at' => now(),
@@ -36,6 +41,14 @@ class CancelEnrollmentAction
             ]);
 
             $this->syncGroupStatus->execute($enrollment->activityGroup);
+
+            app(AuditLogger::class)->log(
+                AuditLog::ENROLLMENT_CANCELLED,
+                $enrollment,
+                'Inscripción cancelada',
+                EnrollmentAuditData::properties($enrollment, $statusBefore),
+                subjectLabel: EnrollmentAuditData::label($enrollment),
+            );
 
             return $enrollment->fresh();
         });

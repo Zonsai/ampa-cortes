@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Forms\Pages;
 
 use App\Filament\Resources\Forms\FormResource;
+use App\Models\AuditLog;
 use App\Models\Form;
+use App\Services\AuditLogger;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -26,6 +28,15 @@ class CreateForm extends CreateRecord
     protected function afterCreate(): void
     {
         $this->syncTargetItems($this->getRecord());
+
+        $record = $this->getRecord();
+        app(AuditLogger::class)->log(
+            AuditLog::FORM_CREATED,
+            $record,
+            'Formulario creado',
+            ['title' => $record->title, 'status' => $record->status?->value, 'scope' => $record->response_scope?->value],
+            subjectLabel: $record->title,
+        );
     }
 
     private function syncTargetItems(Form $record): void

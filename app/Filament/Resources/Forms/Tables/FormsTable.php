@@ -4,7 +4,9 @@ namespace App\Filament\Resources\Forms\Tables;
 
 use App\Enums\FormStatus;
 use App\Models\AcademicYear;
+use App\Models\AuditLog;
 use App\Models\Form;
+use App\Services\AuditLogger;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -107,6 +109,14 @@ class FormsTable
 
                             return $new;
                         });
+
+                        app(AuditLogger::class)->log(
+                            AuditLog::FORM_CLONED,
+                            $clone,
+                            'Formulario clonado',
+                            ['cloned_from' => $record->title, 'cloned_from_id' => $record->id, 'new_title' => $clone->title],
+                            subjectLabel: $clone->title,
+                        );
 
                         Notification::make()
                             ->title('Formulario clonado')

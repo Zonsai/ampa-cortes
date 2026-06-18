@@ -2,7 +2,9 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\AuditLog;
 use App\Services\AppSettings;
+use App\Services\AuditLogger;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\ColorPicker;
@@ -108,6 +110,13 @@ class BrandingSettings extends Page implements HasForms
         foreach ($data as $key => $value) {
             AppSettings::set($key, $value);
         }
+
+        app(AuditLogger::class)->log(
+            AuditLog::BRANDING_UPDATED,
+            null,
+            'Ajustes de marca actualizados',
+            ['ampa_name' => $data['ampa_name'] ?? null, 'school_name' => $data['school_name'] ?? null],
+        );
 
         Notification::make()
             ->title('Ajustes de marca guardados')

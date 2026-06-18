@@ -3,7 +3,10 @@
 namespace App\Actions\Enrollments;
 
 use App\Enums\EnrollmentStatus;
+use App\Models\AuditLog;
 use App\Models\Enrollment;
+use App\Services\AuditLogger;
+use App\Support\EnrollmentAuditData;
 use Illuminate\Validation\ValidationException;
 
 class VoidPaymentAction
@@ -24,12 +27,22 @@ class VoidPaymentAction
             ? $enrollment->internal_notes."\n".$voidNote
             : $voidNote;
 
+        $statusBefore = $enrollment->status;
+
         $enrollment->update([
             'status' => EnrollmentStatus::PendingPayment,
             'paid_at' => null,
             'payment_method' => null,
             'internal_notes' => $internalNotes,
         ]);
+
+        app(AuditLogger::class)->log(
+            AuditLog::PAYMENT_VOIDED,
+            $enrollment,
+            'Pago anulado',
+            EnrollmentAuditData::properties($enrollment, $statusBefore),
+            subjectLabel: EnrollmentAuditData::label($enrollment),
+        );
 
         return $enrollment->fresh();
     }

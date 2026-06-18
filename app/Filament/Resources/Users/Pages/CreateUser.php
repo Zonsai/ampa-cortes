@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UserResource;
+use App\Models\AuditLog;
 use App\Models\Guardian;
+use App\Services\AuditLogger;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,6 +42,18 @@ class CreateUser extends CreateRecord
                 ->whereNull('user_id')
                 ->update(['user_id' => $this->record->id]);
         }
+
+        app(AuditLogger::class)->log(
+            AuditLog::USER_CREATED,
+            $this->record,
+            'Usuario creado desde el panel',
+            [
+                'user' => $this->record->name,
+                'email' => $this->record->email,
+                'roles' => $this->record->getRoleNames()->all(),
+            ],
+            subjectLabel: $this->record->name,
+        );
     }
 
     protected function handleRecordCreation(array $data): Model

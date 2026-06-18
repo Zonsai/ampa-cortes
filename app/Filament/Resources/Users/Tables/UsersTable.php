@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -117,6 +119,13 @@ class UsersTable
                                 return;
                             }
                             $record->update(['password' => $data['password']]);
+                            app(AuditLogger::class)->log(
+                                AuditLog::USER_PASSWORD_RESET,
+                                $record,
+                                'Restablecimiento manual de contraseña',
+                                ['user' => $record->name, 'email' => $record->email],
+                                subjectLabel: $record->name,
+                            );
                             Notification::make()->title('Contraseña restablecida')->success()->send();
                         }),
 
@@ -146,6 +155,15 @@ class UsersTable
                                 return;
                             }
                             $record->update(['is_active' => ! $record->is_active]);
+                            app(AuditLogger::class)->log(
+                                $record->is_active
+                                    ? AuditLog::USER_ACTIVATED
+                                    : AuditLog::USER_DEACTIVATED,
+                                $record,
+                                $record->is_active ? 'Cuenta activada' : 'Cuenta desactivada',
+                                ['user' => $record->name, 'email' => $record->email, 'is_active' => $record->is_active],
+                                subjectLabel: $record->name,
+                            );
                             $label = $record->is_active ? 'activada' : 'desactivada';
                             Notification::make()->title("Cuenta {$label}")->success()->send();
                         }),

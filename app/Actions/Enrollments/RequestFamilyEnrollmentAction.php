@@ -6,9 +6,12 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\PriceType;
 use App\Models\AcademicYear;
 use App\Models\ActivityGroup;
+use App\Models\AuditLog;
 use App\Models\Enrollment;
 use App\Models\Family;
 use App\Models\Student;
+use App\Services\AuditLogger;
+use App\Support\EnrollmentAuditData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -115,6 +118,18 @@ class RequestFamilyEnrollmentAction
             ]);
 
             $this->syncGroupStatus->execute($group->fresh());
+
+            app(AuditLogger::class)->log(
+                $status === EnrollmentStatus::Waitlist
+                    ? AuditLog::ENROLLMENT_REQUESTED_WAITLIST
+                    : AuditLog::ENROLLMENT_REQUESTED,
+                $enrollment,
+                $status === EnrollmentStatus::Waitlist
+                    ? 'Solicitud familiar enviada a lista de espera'
+                    : 'Solicitud familiar de inscripción',
+                EnrollmentAuditData::properties($enrollment, null),
+                subjectLabel: EnrollmentAuditData::label($enrollment),
+            );
 
             return $enrollment;
         });

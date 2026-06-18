@@ -3,7 +3,10 @@
 namespace App\Actions\Enrollments;
 
 use App\Enums\EnrollmentStatus;
+use App\Models\AuditLog;
 use App\Models\Enrollment;
+use App\Services\AuditLogger;
+use App\Support\EnrollmentAuditData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -31,6 +34,8 @@ class PromoteFromWaitlistAction
                 ]);
             }
 
+            $statusBefore = $enrollment->status;
+
             $enrollment->update([
                 'status' => EnrollmentStatus::Enrolled,
                 'enrolled_at' => now(),
@@ -38,6 +43,14 @@ class PromoteFromWaitlistAction
             ]);
 
             $this->syncGroupStatus->execute($group->fresh());
+
+            app(AuditLogger::class)->log(
+                AuditLog::ENROLLMENT_PROMOTED,
+                $enrollment,
+                'Pasado de lista de espera a inscrito/a',
+                EnrollmentAuditData::properties($enrollment, $statusBefore),
+                subjectLabel: EnrollmentAuditData::label($enrollment),
+            );
 
             return $enrollment->fresh();
         });

@@ -8,9 +8,11 @@ use App\Enums\ConsentScope;
 use App\Enums\ConsentTypeStatus;
 use App\Exports\Consents\ConsentHistoryExport;
 use App\Exports\Consents\ConsentStatusExport;
+use App\Models\AuditLog;
 use App\Models\ConsentType;
 use App\Models\ConsentVersion;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -133,6 +135,13 @@ class ConsentTypesTable
                                 ]);
                                 app(PublishConsentTypeAction::class)->execute($record, $version);
                             });
+                            app(AuditLogger::class)->log(
+                                AuditLog::CONSENT_PUBLISHED,
+                                $record,
+                                'Consentimiento publicado',
+                                ['name' => $record->name, 'scope' => $record->scope?->value],
+                                subjectLabel: $record->name,
+                            );
                             Notification::make()->title('Consentimiento publicado correctamente')->success()->send();
                         } catch (ValidationException $e) {
                             $message = collect($e->errors())->flatten()->first() ?? 'Error al publicar';
@@ -166,6 +175,13 @@ class ConsentTypesTable
                                 summary: $data['summary'] ?? null,
                                 effectiveFrom: isset($data['effective_from']) ? Carbon::parse($data['effective_from']) : null,
                                 createdBy: $createdBy,
+                            );
+                            app(AuditLogger::class)->log(
+                                AuditLog::CONSENT_NEW_VERSION,
+                                $record,
+                                'Nueva versión de consentimiento publicada',
+                                ['name' => $record->name],
+                                subjectLabel: $record->name,
                             );
                             Notification::make()->title('Nueva versión publicada correctamente')->success()->send();
                         } catch (ValidationException $e) {

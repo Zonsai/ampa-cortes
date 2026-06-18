@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\Guardians\Tables;
 
+use App\Models\AuditLog;
 use App\Models\Guardian;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -129,6 +131,19 @@ class GuardiansTable
 
                         $user->assignRole('familia');
                         $record->update(['user_id' => $user->id]);
+
+                        app(AuditLogger::class)->log(
+                            AuditLog::FAMILY_ACCESS_CREATED,
+                            $user,
+                            'Acceso familiar creado desde tutor/a',
+                            [
+                                'user' => $user->name,
+                                'email' => $user->email,
+                                'guardian' => $record->full_name,
+                                'family' => $record->family?->name,
+                            ],
+                            subjectLabel: $user->name,
+                        );
 
                         Notification::make()
                             ->title('Acceso familiar creado')

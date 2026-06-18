@@ -4,7 +4,10 @@ namespace App\Actions\Enrollments;
 
 use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentMethod;
+use App\Models\AuditLog;
 use App\Models\Enrollment;
+use App\Services\AuditLogger;
+use App\Support\EnrollmentAuditData;
 use Illuminate\Validation\ValidationException;
 
 class RegisterPaymentAction
@@ -37,12 +40,22 @@ class RegisterPaymentAction
                 : $notesAddition;
         }
 
+        $statusBefore = $enrollment->status;
+
         $enrollment->update([
             'status' => EnrollmentStatus::Paid,
             'paid_at' => $paidAt,
             'payment_method' => $paymentMethod,
             'internal_notes' => $internalNotes,
         ]);
+
+        app(AuditLogger::class)->log(
+            AuditLog::PAYMENT_REGISTERED,
+            $enrollment,
+            'Pago registrado',
+            EnrollmentAuditData::properties($enrollment, $statusBefore),
+            subjectLabel: EnrollmentAuditData::label($enrollment),
+        );
 
         return $enrollment->fresh();
     }

@@ -3,7 +3,10 @@
 namespace App\Actions\Enrollments;
 
 use App\Enums\EnrollmentStatus;
+use App\Models\AuditLog;
 use App\Models\Enrollment;
+use App\Services\AuditLogger;
+use App\Support\EnrollmentAuditData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -29,6 +32,8 @@ class DropEnrollmentAction
                 ]);
             }
 
+            $statusBefore = $enrollment->status;
+
             $enrollment->update([
                 'status' => EnrollmentStatus::Dropped,
                 'ended_at' => now(),
@@ -37,6 +42,14 @@ class DropEnrollmentAction
             ]);
 
             $this->syncGroupStatus->execute($enrollment->activityGroup);
+
+            app(AuditLogger::class)->log(
+                AuditLog::ENROLLMENT_DROPPED,
+                $enrollment,
+                'Inscripción dada de baja',
+                EnrollmentAuditData::properties($enrollment, $statusBefore),
+                subjectLabel: EnrollmentAuditData::label($enrollment),
+            );
 
             return $enrollment->fresh();
         });

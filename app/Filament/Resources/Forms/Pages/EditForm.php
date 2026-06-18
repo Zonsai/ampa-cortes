@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Forms\Pages;
 
 use App\Filament\Resources\Forms\FormResource;
+use App\Models\AuditLog;
 use App\Models\Form;
+use App\Services\AuditLogger;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
@@ -45,6 +47,15 @@ class EditForm extends EditRecord
     protected function afterSave(): void
     {
         $this->syncTargetItems($this->getRecord());
+
+        $record = $this->getRecord();
+        app(AuditLogger::class)->log(
+            AuditLog::FORM_UPDATED,
+            $record,
+            'Formulario editado',
+            ['title' => $record->title, 'status' => $record->status?->value],
+            subjectLabel: $record->title,
+        );
     }
 
     private function syncTargetItems(Form $record): void
