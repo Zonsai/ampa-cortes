@@ -12,7 +12,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        View::composer(['welcome', 'familia.layouts.app'], function ($view) {
+        View::composer(['welcome', 'familia.layouts.app', 'public.layouts.app'], function ($view) {
             try {
                 $view->with('branding', AppSettings::all());
             } catch (\Throwable) {

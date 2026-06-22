@@ -137,6 +137,30 @@
     @endif
 </div>
 
+{{-- Anuncios del AMPA --}}
+@if($familyAnnouncements->isNotEmpty())
+<div class="family-section">
+    <h2 class="family-section__title">Anuncios del AMPA</h2>
+    <div class="family-card-list fam-stack">
+        @foreach($familyAnnouncements as $announcement)
+            <div class="family-card">
+                <div class="family-card__body">
+                    <div class="fam-row-wrap" style="justify-content: space-between; gap: 8px;">
+                        <span class="family-card__title">{{ $announcement->title }}</span>
+                        @if($announcement->published_at)
+                            <span class="fam-muted" style="font-size: .78rem;">{{ $announcement->published_at->format('d/m/Y') }}</span>
+                        @endif
+                    </div>
+                    @if($announcement->summary)
+                        <div class="family-card__sub" style="margin-top: 4px;">{{ \Illuminate\Support\Str::limit($announcement->summary, 160) }}</div>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 {{-- Accesos rápidos --}}
 <div class="family-section">
     <h2 class="family-section__title">Accesos rápidos</h2>

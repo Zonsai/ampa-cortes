@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Announcement;
 use App\Models\ConsentType;
 use App\Models\Enrollment;
 use App\Models\Family;
@@ -95,6 +96,20 @@ class LocalDemoSeederTest extends TestCase
         }
     }
 
+    public function test_creates_demo_announcements_public_and_family(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+        (new LocalDemoSeeder)->run();
+
+        // Public pinned + public + family-only + draft + expired demo announcements.
+        $this->assertDatabaseHas('announcements', ['audience' => 'public', 'is_pinned' => true, 'status' => 'published']);
+        $this->assertDatabaseHas('announcements', ['audience' => 'families', 'status' => 'published']);
+        $this->assertDatabaseHas('announcements', ['status' => 'draft']);
+
+        // The public board shows only the visible ones (not draft/expired/family-only).
+        $this->assertGreaterThanOrEqual(1, Announcement::publiclyVisible()->count());
+    }
+
     public function test_creates_per_family_per_student_and_closed_forms(): void
     {
         $this->app->detectEnvironment(fn () => 'local');
@@ -144,6 +159,7 @@ class LocalDemoSeederTest extends TestCase
         // Inglés (3) + Multideporte (2) = 5 inscripciones; 3 formularios
         $this->assertSame(5, Enrollment::count());
         $this->assertSame(3, Form::count());
+        $this->assertSame(5, Announcement::count());
     }
 
     public function test_links_familia_user_to_family(): void

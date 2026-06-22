@@ -50,6 +50,16 @@ class AuditLog extends Model
 
     public const BRANDING_UPDATED = 'branding.updated';
 
+    public const ANNOUNCEMENT_CREATED = 'announcement.created';
+
+    public const ANNOUNCEMENT_UPDATED = 'announcement.updated';
+
+    public const ANNOUNCEMENT_PUBLISHED = 'announcement.published';
+
+    public const ANNOUNCEMENT_ARCHIVED = 'announcement.archived';
+
+    public const ANNOUNCEMENT_DELETED = 'announcement.deleted';
+
     protected $fillable = [
         'actor_id',
         'actor_name',
@@ -105,6 +115,11 @@ class AuditLog extends Model
             self::CONSENT_PUBLISHED => 'Consentimiento publicado',
             self::CONSENT_NEW_VERSION => 'Nueva versión de consentimiento',
             self::BRANDING_UPDATED => 'Marca actualizada',
+            self::ANNOUNCEMENT_CREATED => 'Anuncio creado',
+            self::ANNOUNCEMENT_UPDATED => 'Anuncio editado',
+            self::ANNOUNCEMENT_PUBLISHED => 'Anuncio publicado',
+            self::ANNOUNCEMENT_ARCHIVED => 'Anuncio archivado',
+            self::ANNOUNCEMENT_DELETED => 'Anuncio borrado',
         ];
     }
 

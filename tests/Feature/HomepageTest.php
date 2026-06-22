@@ -41,20 +41,23 @@ class HomepageTest extends TestCase
         $this->get('/')->assertSee('/admin', false);
     }
 
-    public function test_homepage_shows_family_zone_link_when_authenticated_as_familia(): void
+    public function test_homepage_loads_for_authenticated_familia_user(): void
     {
         $this->seed(RoleSeeder::class);
 
         $user = User::factory()->create(['email_verified_at' => now()]);
         $user->assignRole('familia');
 
+        // The public home is a marketing site; it loads for everyone, including
+        // authenticated users, and keeps its access entry points.
         $this->actingAs($user)
             ->get('/')
-            ->assertSee('/familia', false)
-            ->assertDontSee('/familia/login', false);
+            ->assertOk()
+            ->assertSee('AMPA Cortés de Aragón')
+            ->assertSee('/familia/login', false);
     }
 
-    public function test_homepage_shows_admin_link_when_authenticated_as_non_familia(): void
+    public function test_homepage_loads_for_authenticated_admin_user(): void
     {
         $this->seed(RoleSeeder::class);
 
@@ -63,7 +66,7 @@ class HomepageTest extends TestCase
 
         $this->actingAs($user)
             ->get('/')
-            ->assertSee('/admin', false)
-            ->assertDontSee('/familia/login', false);
+            ->assertOk()
+            ->assertSee('/admin', false);
     }
 }

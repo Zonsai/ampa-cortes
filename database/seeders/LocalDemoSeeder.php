@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Actions\Consents\RevokeConsentAction;
 use App\Enums\ActivityGroupStatus;
 use App\Enums\ActivityStatus;
+use App\Enums\AnnouncementAudience;
+use App\Enums\AnnouncementStatus;
 use App\Enums\ConsentEventType;
 use App\Enums\ConsentResponseStatus;
 use App\Enums\ConsentScope;
@@ -18,6 +20,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use App\Models\AcademicYear;
 use App\Models\ActivityGroup;
+use App\Models\Announcement;
 use App\Models\Classroom;
 use App\Models\ConsentHistory;
 use App\Models\ConsentResponse;
@@ -57,6 +60,7 @@ class LocalDemoSeeder extends Seeder
         $this->seedExtracurricular($garcia, $martinez, $pablo, $laura, $juan, $year);
         $this->seedForms($garcia, $pablo, $laura, $year);
         $this->seedConsents($garcia, $martinez, $pablo, $laura, $lucia, $juan);
+        $this->seedAnnouncements();
 
         $this->command?->info('LocalDemoSeeder completado correctamente.');
     }
@@ -795,6 +799,76 @@ class LocalDemoSeeder extends Seeder
                 'event_type' => ConsentEventType::Revoked,
                 'notes' => $type->requires_image_review ? RevokeConsentAction::IMAGE_REVIEW_NOTE : null,
             ]));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Anuncios (tablón público + zona familiar)
+    // -------------------------------------------------------------------------
+
+    private function seedAnnouncements(): void
+    {
+        $announcements = [
+            [
+                'slug' => 'bienvenida-nuevo-curso',
+                'title' => '¡Bienvenidas y bienvenidos al nuevo curso!',
+                'summary' => 'Arrancamos el curso con muchas novedades en extraescolares y actividades del AMPA.',
+                'content' => "Damos la bienvenida a todas las familias al nuevo curso escolar.\n\nDesde el AMPA hemos preparado una amplia oferta de actividades extraescolares y varias iniciativas para fomentar la participación de las familias. Os animamos a haceros socios/as y a colaborar.\n\n¡Os esperamos!",
+                'status' => AnnouncementStatus::Published,
+                'audience' => AnnouncementAudience::Public,
+                'is_pinned' => true,
+                'published_at' => now()->subDays(3),
+            ],
+            [
+                'slug' => 'abierta-inscripcion-extraescolares',
+                'title' => 'Abierta la inscripción de extraescolares',
+                'summary' => 'Ya puedes inscribir a tus hijos/as en las actividades del curso desde la zona de familias.',
+                'content' => "La inscripción de actividades extraescolares ya está abierta.\n\nLas familias pueden solicitar plaza desde su zona privada. Recuerda que la solicitud no reserva plaza hasta que el AMPA la confirme.",
+                'status' => AnnouncementStatus::Published,
+                'audience' => AnnouncementAudience::Both,
+                'is_pinned' => false,
+                'published_at' => now()->subDays(1),
+            ],
+            [
+                'slug' => 'recordatorio-cuota-socios',
+                'title' => 'Recordatorio: cuota de socios/as',
+                'summary' => 'Información sobre la cuota anual del AMPA para las familias asociadas.',
+                'content' => "Recordamos a las familias socias la información sobre la cuota anual del AMPA.\n\nSer socio/a permite acceder a actividades exclusivas y apoya el trabajo del AMPA durante todo el curso.",
+                'status' => AnnouncementStatus::Published,
+                'audience' => AnnouncementAudience::Families,
+                'is_pinned' => false,
+                'published_at' => now()->subDays(2),
+            ],
+            [
+                'slug' => 'borrador-fiesta-fin-curso',
+                'title' => 'Fiesta de fin de curso (en preparación)',
+                'summary' => 'Estamos organizando la fiesta de fin de curso.',
+                'content' => 'Estamos preparando la fiesta de fin de curso. Pronto publicaremos los detalles.',
+                'status' => AnnouncementStatus::Draft,
+                'audience' => AnnouncementAudience::Public,
+                'is_pinned' => false,
+                'published_at' => null,
+            ],
+            [
+                'slug' => 'aviso-caducado-jornada-puertas-abiertas',
+                'title' => 'Jornada de puertas abiertas (finalizada)',
+                'summary' => 'Anuncio caducado de ejemplo para demostrar que no aparece.',
+                'content' => 'Jornada de puertas abiertas ya finalizada. Este anuncio está caducado y no debe mostrarse.',
+                'status' => AnnouncementStatus::Published,
+                'audience' => AnnouncementAudience::Public,
+                'is_pinned' => false,
+                'published_at' => now()->subDays(20),
+                'expires_at' => now()->subDays(5),
+            ],
+        ];
+
+        $admin = User::where('email', 'admin@ampa.test')->first();
+
+        foreach ($announcements as $data) {
+            Announcement::firstOrCreate(
+                ['slug' => $data['slug']],
+                array_merge($data, ['created_by_id' => $admin?->id]),
+            );
         }
     }
 }

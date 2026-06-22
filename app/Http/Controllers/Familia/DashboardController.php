@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Familia;
 
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\Family;
 use App\Models\Form;
 use App\Models\FormResponse;
@@ -44,6 +45,8 @@ class DashboardController extends Controller
 
         $pendingFormsCount = $this->countPendingFormsForFamily($family);
 
+        $familyAnnouncements = Announcement::query()->forFamilies()->ordered()->limit(3)->get();
+
         return view('familia.dashboard', compact(
             'family',
             'students',
@@ -53,6 +56,7 @@ class DashboardController extends Controller
             'waitlistCount',
             'pendingPaymentCount',
             'pendingConsentsCount',
+            'familyAnnouncements',
             'pendingFormsCount',
         ));
     }

@@ -34,6 +34,8 @@ class RoleSeeder extends Seeder
             'view consents', 'manage consents',
             // Audit log (read-only activity log)
             'view audit logs',
+            // Announcements (public + family noticeboard)
+            'view announcements', 'manage announcements',
         ];
 
         foreach ($permissions as $permission) {
