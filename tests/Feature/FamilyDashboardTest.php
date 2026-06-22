@@ -9,6 +9,7 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\FormStatus;
 use App\Models\AcademicYear;
 use App\Models\ActivityGroup;
+use App\Models\Announcement;
 use App\Models\Classroom;
 use App\Models\ConsentResponse;
 use App\Models\ConsentType;
@@ -105,7 +106,22 @@ class FamilyDashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('familia.dashboard'))
             ->assertOk()
-            ->assertSee('Todo al día');
+            ->assertSee('Pendiente de ti')
+            ->assertSee('Todo al día')
+            ->assertSee('No tienes gestiones pendientes.');
+    }
+
+    public function test_dashboard_shows_pendiente_de_ti_section_when_something_pending(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $student] = $this->createFamilyUser();
+        ['group' => $group] = $this->createPublishedActivity();
+        $this->createEnrollment($family, $student, $group, EnrollmentStatus::Pending);
+
+        $this->actingAs($user)
+            ->get(route('familia.dashboard'))
+            ->assertOk()
+            ->assertSee('Pendiente de ti')
+            ->assertDontSee('Todo al día');
     }
 
     public function test_dashboard_shows_empty_enrollments_state_when_none(): void
@@ -168,7 +184,21 @@ class FamilyDashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('familia.dashboard'))
             ->assertOk()
-            ->assertSee('Pendiente de pago');
+            ->assertSee('Pendiente de pago')
+            ->assertSee('Ver inscripciones');
+    }
+
+    public function test_dashboard_shows_waitlist_notice_when_present(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $student] = $this->createFamilyUser();
+        ['group' => $group] = $this->createPublishedActivity();
+        $this->createEnrollment($family, $student, $group, EnrollmentStatus::Waitlist);
+
+        $this->actingAs($user)
+            ->get(route('familia.dashboard'))
+            ->assertOk()
+            ->assertSee('Lista de espera')
+            ->assertSee('en lista de espera');
     }
 
     public function test_dashboard_shows_paid_as_pago_registrado(): void
@@ -197,7 +227,9 @@ class FamilyDashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('familia.dashboard'))
             ->assertOk()
-            ->assertSee('Formularios pendientes');
+            ->assertSee('Formularios pendientes')
+            ->assertSee('Ver formularios')
+            ->assertSee(route('familia.forms.index'), false);
     }
 
     public function test_dashboard_hides_pending_forms_notice_when_answered(): void
@@ -243,7 +275,41 @@ class FamilyDashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('familia.dashboard'))
             ->assertOk()
-            ->assertSee('Consentimientos pendientes');
+            ->assertSee('Consentimientos pendientes')
+            ->assertSee('Ver consentimientos')
+            ->assertSee(route('familia.consents.index'), false);
+    }
+
+    // ─── Announcements & enrollments remain reachable ────────────────────────
+
+    public function test_dashboard_keeps_announcements_visible_alongside_pending_section(): void
+    {
+        ['user' => $user] = $this->createFamilyUser();
+
+        Announcement::factory()->forFamilies()->create([
+            'title' => 'Reunión de AMPA',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('familia.dashboard'))
+            ->assertOk()
+            ->assertSee('Pendiente de ti')
+            ->assertSee('Anuncios del AMPA')
+            ->assertSee('Reunión de AMPA');
+    }
+
+    public function test_dashboard_keeps_enrollments_table_visible_alongside_pending_section(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $student] = $this->createFamilyUser();
+        ['group' => $group] = $this->createPublishedActivity();
+        $this->createEnrollment($family, $student, $group, EnrollmentStatus::Pending);
+
+        $this->actingAs($user)
+            ->get(route('familia.dashboard'))
+            ->assertOk()
+            ->assertSee('Pendiente de ti')
+            ->assertSee('Inscripciones y solicitudes')
+            ->assertSee($group->activity->name);
     }
 
     // ─── Activities flow explanation ─────────────────────────────────────────

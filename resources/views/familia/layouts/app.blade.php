@@ -102,6 +102,21 @@
         .family-section { margin-bottom: 28px; }
         .family-section__title { font-size: 1rem; font-weight: 600; margin: 0 0 12px; }
 
+        /* Pending actions ("Pendiente de ti") */
+        .family-pending-list { display: grid; gap: 10px; }
+        .family-pending-item { display: flex; align-items: flex-start; gap: 12px; background: var(--fam-surface); border: 1px solid var(--fam-border); border-radius: var(--fam-radius-sm); padding: 13px 14px; box-shadow: var(--fam-shadow); }
+        .family-pending-item__icon { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: #eef2ff; color: var(--brand-primary); }
+        .family-pending-item__icon svg { width: 18px; height: 18px; }
+        .family-pending-item__body { flex: 1 1 auto; min-width: 0; }
+        .family-pending-item__title { font-weight: 600; font-size: .92rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .family-pending-item__desc { font-size: .82rem; color: var(--fam-muted); margin-top: 3px; }
+        .family-pending-item__cta { flex: 0 0 auto; }
+        @media (max-width: 560px) {
+            .family-pending-item { flex-wrap: wrap; }
+            .family-pending-item__cta { width: 100%; }
+            .family-pending-item__cta .family-btn { width: 100%; }
+        }
+
         /* Card */
         .family-card { background: var(--fam-surface); border: 1px solid var(--fam-border); border-radius: var(--fam-radius); box-shadow: var(--fam-shadow); overflow: hidden; }
         .family-card-list > .family-card + .family-card { margin-top: 14px; }

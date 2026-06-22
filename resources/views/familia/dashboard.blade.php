@@ -16,66 +16,116 @@
     </p>
 </div>
 
-{{-- Avisos calculados --}}
-@if($pendingRequestCount > 0 || $waitlistCount > 0 || $pendingPaymentCount > 0 || $pendingConsentsCount > 0 || $pendingFormsCount > 0)
-<div class="family-alerts">
-    @if($pendingRequestCount > 0)
-        <div class="family-alert family-alert--brand">
-            <span>
-                <strong>Solicitudes enviadas:</strong>
-                tienes {{ $pendingRequestCount }} {{ $pendingRequestCount === 1 ? 'solicitud' : 'solicitudes' }}
-                a la espera de que el AMPA las revise.
-                La solicitud no reserva plaza hasta que el AMPA la confirme.
-            </span>
+{{-- Pendiente de ti --}}
+@php
+    $hasPending = $pendingConsentsCount > 0 || $pendingFormsCount > 0 || $pendingPaymentCount > 0 || $pendingRequestCount > 0 || $waitlistCount > 0;
+@endphp
+<div class="family-section">
+    <h2 class="family-section__title">Pendiente de ti</h2>
+
+    @if($hasPending)
+        <div class="family-pending-list">
+            @if($pendingConsentsCount > 0)
+                <div class="family-pending-item">
+                    <span class="family-pending-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 2.5l6 2.2v4.3c0 4-2.6 6.7-6 8-3.4-1.3-6-4-6-8V4.7l6-2.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 10l1.8 1.8L12.8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <div class="family-pending-item__body">
+                        <div class="family-pending-item__title">
+                            Consentimientos pendientes
+                            <span class="family-chip family-chip--count">{{ $pendingConsentsCount }}</span>
+                        </div>
+                        <div class="family-pending-item__desc">
+                            Tienes {{ $pendingConsentsCount }} {{ $pendingConsentsCount === 1 ? 'consentimiento' : 'consentimientos' }} pendiente{{ $pendingConsentsCount === 1 ? '' : 's' }} de revisar.
+                        </div>
+                    </div>
+                    <div class="family-pending-item__cta">
+                        <a href="{{ route('familia.consents.index') }}" class="family-btn family-btn--ghost family-btn--sm">Ver consentimientos</a>
+                    </div>
+                </div>
+            @endif
+
+            @if($pendingFormsCount > 0)
+                <div class="family-pending-item">
+                    <span class="family-pending-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2.5h7l3 3v12h-10v-15z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 9h5M7.5 12h5M7.5 15h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </span>
+                    <div class="family-pending-item__body">
+                        <div class="family-pending-item__title">
+                            Formularios pendientes
+                            <span class="family-chip family-chip--count">{{ $pendingFormsCount }}</span>
+                        </div>
+                        <div class="family-pending-item__desc">
+                            Queda{{ $pendingFormsCount === 1 ? '' : 'n' }} {{ $pendingFormsCount }} {{ $pendingFormsCount === 1 ? 'formulario' : 'formularios' }} por responder.
+                        </div>
+                    </div>
+                    <div class="family-pending-item__cta">
+                        <a href="{{ route('familia.forms.index') }}" class="family-btn family-btn--ghost family-btn--sm">Ver formularios</a>
+                    </div>
+                </div>
+            @endif
+
+            @if($pendingPaymentCount > 0)
+                <div class="family-pending-item">
+                    <span class="family-pending-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="5" width="15" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8.5h15" stroke="currentColor" stroke-width="1.5"/></svg>
+                    </span>
+                    <div class="family-pending-item__body">
+                        <div class="family-pending-item__title">
+                            Pendiente de pago
+                            <span class="family-chip family-chip--count">{{ $pendingPaymentCount }}</span>
+                        </div>
+                        <div class="family-pending-item__desc">
+                            Tienes {{ $pendingPaymentCount }} {{ $pendingPaymentCount === 1 ? 'inscripción' : 'inscripciones' }} pendiente{{ $pendingPaymentCount === 1 ? '' : 's' }} de pago. Contacta con el AMPA para completarla.
+                        </div>
+                    </div>
+                    <div class="family-pending-item__cta">
+                        <a href="#family-enrollments" class="family-btn family-btn--ghost family-btn--sm">Ver inscripciones</a>
+                    </div>
+                </div>
+            @endif
+
+            @if($pendingRequestCount > 0)
+                <div class="family-pending-item">
+                    <span class="family-pending-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10.5" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 6.5v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <div class="family-pending-item__body">
+                        <div class="family-pending-item__title">
+                            Solicitudes enviadas
+                            <span class="family-chip family-chip--count">{{ $pendingRequestCount }}</span>
+                        </div>
+                        <div class="family-pending-item__desc">
+                            {{ $pendingRequestCount === 1 ? 'Tu solicitud está' : "Tus {$pendingRequestCount} solicitudes están" }} pendiente{{ $pendingRequestCount === 1 ? '' : 's' }} de confirmación por el AMPA. La solicitud no reserva plaza hasta que se confirme.
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($waitlistCount > 0)
+                <div class="family-pending-item">
+                    <span class="family-pending-item__icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="2.3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="1.8" stroke="currentColor" stroke-width="1.5"/><path d="M2.8 16c0-2.5 1.9-4.2 4.2-4.2s4.2 1.7 4.2 4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 12.4c1.8 0 3.4 1.4 3.6 3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </span>
+                    <div class="family-pending-item__body">
+                        <div class="family-pending-item__title">
+                            Lista de espera
+                            <span class="family-chip family-chip--count">{{ $waitlistCount }}</span>
+                        </div>
+                        <div class="family-pending-item__desc">
+                            Tienes {{ $waitlistCount }} {{ $waitlistCount === 1 ? 'inscripción' : 'inscripciones' }} en lista de espera. El AMPA te contactará si queda una plaza libre.
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
-    @endif
-    @if($pendingPaymentCount > 0)
-        <div class="family-alert family-alert--info">
-            <span>
-                <strong>Pendiente de pago:</strong>
-                tienes {{ $pendingPaymentCount }} {{ $pendingPaymentCount === 1 ? 'inscripción' : 'inscripciones' }}
-                pendiente{{ $pendingPaymentCount === 1 ? '' : 's' }} de pago.
-                Contacta con el AMPA para completarla.
-            </span>
-        </div>
-    @endif
-    @if($waitlistCount > 0)
-        <div class="family-alert family-alert--warning">
-            <span>
-                <strong>Lista de espera:</strong>
-                tienes {{ $waitlistCount }} {{ $waitlistCount === 1 ? 'inscripción' : 'inscripciones' }} en lista de espera.
-                El AMPA te contactará si queda una plaza libre.
-            </span>
-        </div>
-    @endif
-    @if($pendingConsentsCount > 0)
-        <div class="family-alert family-alert--brand">
-            <span>
-                <strong>Consentimientos pendientes:</strong>
-                tienes {{ $pendingConsentsCount }} {{ $pendingConsentsCount === 1 ? 'consentimiento' : 'consentimientos' }}
-                pendiente{{ $pendingConsentsCount === 1 ? '' : 's' }} de revisar.
-                <a href="{{ route('familia.consents.index') }}">Ver consentimientos →</a>
-            </span>
-        </div>
-    @endif
-    @if($pendingFormsCount > 0)
-        <div class="family-alert family-alert--violet">
-            <span>
-                <strong>Formularios pendientes:</strong>
-                tienes {{ $pendingFormsCount }} {{ $pendingFormsCount === 1 ? 'formulario' : 'formularios' }}
-                pendiente{{ $pendingFormsCount === 1 ? '' : 's' }} de responder.
-                <a href="{{ route('familia.forms.index') }}">Ver formularios →</a>
-            </span>
+    @else
+        <div class="family-empty-state">
+            <div class="family-empty-state__title">Todo al día</div>
+            <p>No tienes gestiones pendientes.</p>
         </div>
     @endif
 </div>
-@else
-<div class="family-alerts">
-    <div class="family-alert family-alert--success">
-        <span>Todo al día: no tienes solicitudes, pagos, consentimientos ni formularios pendientes.</span>
-    </div>
-</div>
-@endif
 
 {{-- Resumen en tarjetas --}}
 <div class="family-stats-grid">
@@ -98,7 +148,7 @@
 </div>
 
 {{-- Inscripciones activas --}}
-<div class="family-section">
+<div class="family-section" id="family-enrollments">
     <h2 class="family-section__title">Inscripciones y solicitudes</h2>
     @if($activeEnrollments->count() > 0)
         <div class="family-card">
