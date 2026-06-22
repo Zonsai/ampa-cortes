@@ -93,7 +93,8 @@ class EnrollmentsTable
             ->filters([
                 SelectFilter::make('academic_year_id')
                     ->label('Año académico')
-                    ->options(AcademicYear::query()->orderByDesc('starts_at')->pluck('name', 'id')),
+                    ->relationship('academicYear', 'name')
+                    ->default(fn () => AcademicYear::where('is_active', true)->value('id')),
                 SelectFilter::make('status')
                     ->label('Estado')
                     ->options(EnrollmentStatus::class),

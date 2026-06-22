@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Students\RelationManagers;
 
 use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentMethod;
+use App\Models\AcademicYear;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -63,6 +64,10 @@ class EnrollmentsRelationManager extends RelationManager
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('academic_year_id')
+                    ->label('Año académico')
+                    ->relationship('academicYear', 'name')
+                    ->default(fn () => AcademicYear::where('is_active', true)->value('id')),
                 SelectFilter::make('status')
                     ->label('Estado')
                     ->options(EnrollmentStatus::class),
