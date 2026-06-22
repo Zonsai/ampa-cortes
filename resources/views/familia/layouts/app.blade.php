@@ -38,7 +38,9 @@
         /* Header */
         .family-header { background: var(--fam-surface); border-bottom: 1px solid var(--fam-border); position: sticky; top: 0; z-index: 30; }
         .family-header__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
-        .family-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .family-brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: inherit; border-radius: var(--fam-radius-sm); padding: 4px 6px; margin: -4px -6px; transition: background .15s; }
+        .family-brand:hover { background: #f4f5f7; }
+        .family-brand:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
         .family-brand__logo { height: 34px; width: auto; object-fit: contain; }
         .family-brand__badge { display: inline-flex; align-items: center; justify-content: center; height: 34px; width: 34px; border-radius: 50%; background: var(--brand-primary); color: #fff; font-weight: 700; font-size: .72rem; flex: 0 0 auto; }
         .family-brand__text { min-width: 0; }
@@ -185,24 +187,31 @@
         .family-empty-state p { margin: 0 auto; font-size: .88rem; max-width: 38ch; }
         .family-empty-state .family-btn { margin-top: 14px; }
 
-        /* Activity catalog */
-        .family-activity-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-        @media (min-width: 640px) { .family-activity-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 960px) { .family-activity-grid { grid-template-columns: repeat(3, 1fr); } }
-        .family-activity-card { display: flex; flex-direction: column; background: var(--fam-surface); border: 1px solid var(--fam-border); border-radius: var(--fam-radius); box-shadow: var(--fam-shadow); overflow: hidden; transition: border-color .15s, box-shadow .15s; }
-        .family-activity-card:hover { border-color: #c7d2fe; box-shadow: var(--fam-shadow-hover); }
-        .family-activity-card__body { flex: 1; padding: 16px; }
-        .family-activity-card__foot { padding: 0 16px 16px; }
-        .family-activity-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-        .family-activity-card__title { font-weight: 600; font-size: 1.02rem; }
-        .family-activity-card__desc { font-size: .85rem; color: var(--fam-muted); margin: 10px 0; }
-        .family-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
-        .family-price { font-size: .82rem; color: var(--fam-muted); font-weight: 500; }
+        /* Activity enrollment status (index) */
         .family-enroll-list { margin-top: 12px; border-top: 1px solid #f1f2f4; padding-top: 10px; display: grid; gap: 6px; }
         .family-enroll-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .8rem; }
         .family-enroll-line__name { color: var(--fam-muted); }
 
+        /* Child enrollment list */
+        .family-child-enrollments { display: grid; gap: 0; }
+        .family-child-enrollment { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; }
+        .family-child-enrollment + .family-child-enrollment { border-top: 1px solid #f4f4f5; }
+        .family-child-enrollment__info { min-width: 0; }
+        .family-child-enrollment__name { font-weight: 500; font-size: .9rem; display: block; }
+        .family-child-enrollment__group { font-size: .78rem; color: var(--fam-muted); }
+        .family-child-enrollment__status { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+
+        /* Activity list (index) */
+        .family-activity-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+
         /* Group meta (activity detail) */
+        .family-group-details { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .82rem; color: var(--fam-muted); margin-top: 4px; }
+        .family-group-detail { white-space: nowrap; }
+        .family-group-info-grid { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-bottom: 4px; }
+        .family-group-info-item { display: flex; align-items: baseline; gap: 6px; font-size: .84rem; }
+        .family-group-info-label { font-size: .7rem; font-weight: 600; color: var(--fam-muted-2); text-transform: uppercase; letter-spacing: .04em; }
+        .family-group-info-value { color: var(--fam-text); }
+        .family-group-students { margin-top: 12px; border-top: 1px solid #f1f2f4; padding-top: 4px; }
         .family-meta-list { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .85rem; color: var(--fam-muted); margin-top: 6px; }
         .family-meta-list strong { color: var(--fam-text); font-weight: 600; }
         .family-spots { font-size: .78rem; color: var(--fam-muted-2); margin-top: 8px; }
@@ -274,7 +283,7 @@
                         : null;
                 @endphp
 
-                <div class="family-brand">
+                <a href="{{ route('familia.dashboard') }}" class="family-brand">
                     @if($ampaLogo)
                         <img src="{{ $ampaLogo }}" alt="Logo {{ $ampaName }}" class="family-brand__logo">
                     @else
@@ -294,7 +303,7 @@
                             <div class="family-brand__sub">Portal Familias</div>
                         @endauth
                     </div>
-                </div>
+                </a>
 
                 @auth
                     <form method="POST" action="{{ route('familia.logout') }}">

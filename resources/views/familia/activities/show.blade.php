@@ -58,44 +58,21 @@
         @endphp
 
         <div class="family-card">
-            {{-- Cabecera del grupo --}}
             <div class="family-card__header">
                 <div class="family-row__main">
                     <div class="family-card__title">{{ $group->name }}</div>
 
-                    <div class="family-meta-list">
+                    <div class="family-group-details">
                         @if($days)
-                            <span>{{ $days }}</span>
+                            <span class="family-group-detail">{{ $days }}</span>
                         @endif
                         @if($group->starts_at && $group->ends_at)
-                            <span>{{ \Carbon\Carbon::parse($group->starts_at)->format('H:i') }}–{{ \Carbon\Carbon::parse($group->ends_at)->format('H:i') }}h</span>
+                            <span class="family-group-detail">{{ \Carbon\Carbon::parse($group->starts_at)->format('H:i') }}–{{ \Carbon\Carbon::parse($group->ends_at)->format('H:i') }}h</span>
                         @endif
                         @if($group->location)
-                            <span>{{ $group->location }}</span>
+                            <span class="family-group-detail">{{ $group->location }}</span>
                         @endif
                     </div>
-
-                    <div class="family-meta-list">
-                        @if($group->price_member && (float) $group->price_member > 0)
-                            <span>Socio: <strong>{{ number_format($group->price_member, 2, ',', '.') }} €/mes</strong></span>
-                        @endif
-                        @if($group->price_non_member && (float) $group->price_non_member > 0)
-                            <span>No socio: <strong>{{ number_format($group->price_non_member, 2, ',', '.') }} €/mes</strong></span>
-                        @endif
-                    </div>
-
-                    <div class="family-spots">
-                        Plazas: {{ $occupied }}/{{ $group->max_spots }}
-                        @if($available > 0)
-                            · <span class="ok">{{ $available }} disponibles</span>
-                        @else
-                            · <span class="full">Sin plazas libres</span>
-                        @endif
-                    </div>
-
-                    @if($group->grades->isNotEmpty())
-                        <div class="family-spots">Cursos: {{ $group->grades->pluck('name')->join(', ') }}</div>
-                    @endif
                 </div>
 
                 <span class="family-status-badge
@@ -106,70 +83,106 @@
                 </span>
             </div>
 
-            {{-- Alumnos/as --}}
             <div class="family-card__body">
-                @if($isUnavailable)
-                    <p class="fam-muted" style="font-size: .85rem; margin: 0;">Este grupo no está disponible para inscripciones.</p>
-                @elseif(! $canEnroll)
-                    <p class="fam-muted" style="font-size: .85rem; margin: 0;">Necesitas ser socio/a del AMPA para inscribirte en esta actividad.</p>
-                @elseif($students->isEmpty())
-                    <p class="fam-muted" style="font-size: .85rem; margin: 0;">No hay alumnos/as activos/as en tu familia.</p>
-                @else
-                    @foreach($students as $student)
-                    @php
-                        $key = $student->id.'_'.$group->id;
-                        $enrollment = $enrollmentMap->get($key);
-                        $enrolledGroupIds = $studentEnrolledGroupIds->get($student->id, []);
-                        $enrolledInOtherGroup = ! $enrollment && count($enrolledGroupIds) > 0;
-                        $currentGradeId = $studentCurrentGradeIds->get($student->id);
-                        $hasNoClassroom = $currentGradeId === null;
-                        $gradeRestricted = $group->grades->isNotEmpty() && ! $group->grades->contains('id', $currentGradeId);
-                    @endphp
-                    <div class="family-row" style="padding-left: 0; padding-right: 0;">
-                        <div class="family-row__main">
-                            <span class="family-row__title">{{ $student->first_name }} {{ $student->last_name }}</span>
-                        </div>
+                <div class="family-group-info-grid">
+                    <div class="family-group-info-item">
+                        <span class="family-group-info-label">Plazas</span>
+                        <span class="family-group-info-value">
+                            {{ $occupied }}/{{ $group->max_spots }}
+                            @if($available > 0)
+                                · <span style="color: #16a34a; font-weight: 600;">{{ $available }} libres</span>
+                            @else
+                                · <span style="color: #ea580c; font-weight: 600;">Completo</span>
+                            @endif
+                        </span>
+                    </div>
 
-                        <div class="family-row__side family-row__side--stack">
-                            @if($enrollment)
-                                @include('familia.partials.status-badge', ['status' => $enrollment->status])
-                                @if(in_array($enrollment->status, [\App\Enums\EnrollmentStatus::Pending, \App\Enums\EnrollmentStatus::Waitlist]))
-                                    <form method="POST"
-                                          action="{{ route('familia.enrollment.cancel', $enrollment) }}"
-                                          onsubmit="return confirm('¿Seguro que quieres cancelar esta solicitud?')">
+                    @if($group->price_member && (float) $group->price_member > 0)
+                        <div class="family-group-info-item">
+                            <span class="family-group-info-label">Socio</span>
+                            <span class="family-group-info-value"><strong>{{ number_format($group->price_member, 2, ',', '.') }} €/mes</strong></span>
+                        </div>
+                    @endif
+                    @if($group->price_non_member && (float) $group->price_non_member > 0)
+                        <div class="family-group-info-item">
+                            <span class="family-group-info-label">No socio</span>
+                            <span class="family-group-info-value"><strong>{{ number_format($group->price_non_member, 2, ',', '.') }} €/mes</strong></span>
+                        </div>
+                    @endif
+
+                    @if($group->grades->isNotEmpty())
+                        <div class="family-group-info-item">
+                            <span class="family-group-info-label">Cursos</span>
+                            <span class="family-group-info-value">{{ $group->grades->pluck('name')->join(', ') }}</span>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- Alumnos/as --}}
+                @if($isUnavailable)
+                    <p class="fam-muted" style="font-size: .85rem; margin: 12px 0 0;">Este grupo no está disponible para inscripciones.</p>
+                @elseif(! $canEnroll)
+                    <p class="fam-muted" style="font-size: .85rem; margin: 12px 0 0;">Necesitas ser socio/a del AMPA para inscribirte en esta actividad.</p>
+                @elseif($students->isEmpty())
+                    <p class="fam-muted" style="font-size: .85rem; margin: 12px 0 0;">No hay alumnos/as activos/as en tu familia.</p>
+                @else
+                    <div class="family-group-students">
+                        @foreach($students as $student)
+                        @php
+                            $key = $student->id.'_'.$group->id;
+                            $enrollment = $enrollmentMap->get($key);
+                            $enrolledGroupIds = $studentEnrolledGroupIds->get($student->id, []);
+                            $enrolledInOtherGroup = ! $enrollment && count($enrolledGroupIds) > 0;
+                            $currentGradeId = $studentCurrentGradeIds->get($student->id);
+                            $hasNoClassroom = $currentGradeId === null;
+                            $gradeRestricted = $group->grades->isNotEmpty() && ! $group->grades->contains('id', $currentGradeId);
+                        @endphp
+                        <div class="family-child-enrollment">
+                            <div class="family-child-enrollment__info">
+                                <span class="family-child-enrollment__name">{{ $student->first_name }} {{ $student->last_name }}</span>
+                            </div>
+
+                            <div class="family-child-enrollment__status">
+                                @if($enrollment)
+                                    @include('familia.partials.status-badge', ['status' => $enrollment->status])
+                                    @if(in_array($enrollment->status, [\App\Enums\EnrollmentStatus::Pending, \App\Enums\EnrollmentStatus::Waitlist]))
+                                        <form method="POST"
+                                              action="{{ route('familia.enrollment.cancel', $enrollment) }}"
+                                              onsubmit="return confirm('¿Seguro que quieres cancelar esta solicitud?')">
+                                            @csrf
+                                            <button type="submit" class="family-link-danger">Cancelar solicitud</button>
+                                        </form>
+                                    @endif
+
+                                @elseif($enrolledInOtherGroup)
+                                    <span class="fam-muted" style="font-size: .78rem;">Ya inscrito/a en otro grupo</span>
+
+                                @elseif($hasNoClassroom)
+                                    <span class="fam-muted" style="font-size: .78rem;">Sin clase asignada este curso</span>
+
+                                @elseif($gradeRestricted)
+                                    <span class="fam-muted" style="font-size: .78rem;">No disponible para su curso</span>
+
+                                @elseif($isFull)
+                                    <form method="POST" action="{{ route('familia.enroll') }}">
                                         @csrf
-                                        <button type="submit" class="family-link-danger">Cancelar solicitud</button>
+                                        <input type="hidden" name="student_id" value="{{ $student->id }}">
+                                        <input type="hidden" name="activity_group_id" value="{{ $group->id }}">
+                                        <button type="submit" class="family-btn family-btn--warning family-btn--sm">Apuntarse a lista de espera</button>
+                                    </form>
+
+                                @else
+                                    <form method="POST" action="{{ route('familia.enroll') }}">
+                                        @csrf
+                                        <input type="hidden" name="student_id" value="{{ $student->id }}">
+                                        <input type="hidden" name="activity_group_id" value="{{ $group->id }}">
+                                        <button type="submit" class="family-btn family-btn--primary family-btn--sm">Solicitar plaza</button>
                                     </form>
                                 @endif
-
-                            @elseif($enrolledInOtherGroup)
-                                <span class="fam-muted" style="font-size: .78rem;">Ya inscrito/a en otro grupo</span>
-
-                            @elseif($hasNoClassroom)
-                                <span class="fam-muted" style="font-size: .78rem;">Sin clase asignada este curso</span>
-
-                            @elseif($gradeRestricted)
-                                <span class="fam-muted" style="font-size: .78rem;">No disponible para su curso</span>
-
-                            @elseif($isFull)
-                                <form method="POST" action="{{ route('familia.enroll') }}">
-                                    @csrf
-                                    <input type="hidden" name="student_id" value="{{ $student->id }}">
-                                    <input type="hidden" name="activity_group_id" value="{{ $group->id }}">
-                                    <button type="submit" class="family-btn family-btn--warning family-btn--sm">Apuntarse a lista de espera</button>
-                                </form>
-
-                            @else
-                                <form method="POST" action="{{ route('familia.enroll') }}">
-                                    @csrf
-                                    <input type="hidden" name="student_id" value="{{ $student->id }}">
-                                    <input type="hidden" name="activity_group_id" value="{{ $group->id }}">
-                                    <button type="submit" class="family-btn family-btn--primary family-btn--sm">Solicitar plaza</button>
-                                </form>
-                            @endif
+                            </div>
                         </div>
+                        @endforeach
                     </div>
-                    @endforeach
                 @endif
             </div>
         </div>

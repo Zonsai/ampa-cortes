@@ -17,17 +17,29 @@
 @else
     <div class="family-card-list fam-stack">
         @foreach($students as $student)
+        @php
+            $classroom = $student->classrooms->first();
+            $studentEnrollments = $student->enrollments
+                ->whereIn('status', [
+                    \App\Enums\EnrollmentStatus::Pending,
+                    \App\Enums\EnrollmentStatus::Waitlist,
+                    \App\Enums\EnrollmentStatus::Enrolled,
+                    \App\Enums\EnrollmentStatus::PendingPayment,
+                    \App\Enums\EnrollmentStatus::Paid,
+                ]);
+        @endphp
         <div class="family-card">
             <div class="family-card__header">
                 <div>
-                    <div class="family-card__title">{{ $student->last_name }}, {{ $student->first_name }}</div>
-                    @php $classroom = $student->classrooms->first(); @endphp
+                    <div class="family-card__title">{{ $student->first_name }} {{ $student->last_name }}</div>
                     @if($classroom)
                         <div class="family-card__sub">
-                            {{ $classroom->grade?->name ?? '—' }}@if($classroom->name) — {{ $classroom->name }}@endif
+                            {{ $classroom->grade?->name ?? '—' }}@if($classroom->name) · {{ $classroom->name }}@endif
                         </div>
                     @else
-                        <div class="family-card__sub">Sin clase asignada este curso</div>
+                        <div class="family-card__sub">
+                            <span class="family-chip">Sin clase asignada</span>
+                        </div>
                     @endif
                 </div>
                 @unless($student->is_active)
@@ -35,41 +47,36 @@
                 @endunless
             </div>
 
-            {{-- Inscripciones de este alumno --}}
-            @php
-                $studentEnrollments = $student->enrollments
-                    ->whereIn('status', [
-                        \App\Enums\EnrollmentStatus::Pending,
-                        \App\Enums\EnrollmentStatus::Waitlist,
-                        \App\Enums\EnrollmentStatus::Enrolled,
-                        \App\Enums\EnrollmentStatus::PendingPayment,
-                        \App\Enums\EnrollmentStatus::Paid,
-                    ]);
-            @endphp
-
-            @if($studentEnrollments->isEmpty())
-                <div class="family-card__body fam-muted" style="font-size: .85rem;">Sin inscripciones activas.</div>
-            @else
-                @foreach($studentEnrollments as $enrollment)
-                <div class="family-row">
-                    <div class="family-row__main">
-                        <div class="family-row__title">{{ $enrollment->activity->name ?? '—' }}</div>
-                        <div class="family-row__sub">{{ $enrollment->activityGroup->name ?? '—' }}</div>
+            <div class="family-card__body">
+                @if($studentEnrollments->isEmpty())
+                    <p class="fam-muted" style="font-size: .85rem; margin: 0;">
+                        Sin inscripciones activas.
+                        <a href="{{ route('familia.activities.index') }}" class="family-link">Ver extraescolares</a>
+                    </p>
+                @else
+                    <div class="family-child-enrollments">
+                        @foreach($studentEnrollments as $enrollment)
+                        <div class="family-child-enrollment">
+                            <div class="family-child-enrollment__info">
+                                <span class="family-child-enrollment__name">{{ $enrollment->activity->name ?? '—' }}</span>
+                                <span class="family-child-enrollment__group">{{ $enrollment->activityGroup->name ?? '—' }}</span>
+                            </div>
+                            <div class="family-child-enrollment__status">
+                                @include('familia.partials.status-badge', ['status' => $enrollment->status])
+                                @if(in_array($enrollment->status, [\App\Enums\EnrollmentStatus::Pending, \App\Enums\EnrollmentStatus::Waitlist]))
+                                    <form method="POST"
+                                          action="{{ route('familia.enrollment.cancel', $enrollment) }}"
+                                          onsubmit="return confirm('¿Seguro que quieres cancelar esta solicitud?')">
+                                        @csrf
+                                        <button type="submit" class="family-link-danger">Cancelar solicitud</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
-                    <div class="family-row__side family-row__side--stack">
-                        @include('familia.partials.status-badge', ['status' => $enrollment->status])
-                        @if(in_array($enrollment->status, [\App\Enums\EnrollmentStatus::Pending, \App\Enums\EnrollmentStatus::Waitlist]))
-                            <form method="POST"
-                                  action="{{ route('familia.enrollment.cancel', $enrollment) }}"
-                                  onsubmit="return confirm('¿Seguro que quieres cancelar esta solicitud?')">
-                                @csrf
-                                <button type="submit" class="family-link-danger">Cancelar solicitud</button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
-                @endforeach
-            @endif
+                @endif
+            </div>
         </div>
         @endforeach
     </div>

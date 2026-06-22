@@ -32,7 +32,7 @@
             <p>Por ahora no hay extraescolares publicadas. Vuelve a consultar más adelante.</p>
         </div>
     @else
-        <div class="family-activity-grid">
+        <div class="family-activity-list fam-stack">
             @foreach($activities as $activity)
             @php
                 $activityEnrollments = $familyEnrollmentsByActivity->get($activity->id, collect());
@@ -44,29 +44,30 @@
                 $minPrice = $prices->first();
                 $maxPrice = $prices->last();
             @endphp
-            <div class="family-activity-card">
-                <div class="family-activity-card__body">
-                    <div class="family-activity-card__head">
-                        <h2 class="family-activity-card__title">{{ $activity->name }}</h2>
+            <div class="family-card">
+                <div class="family-card__header">
+                    <div>
+                        <div class="family-card__title">{{ $activity->name }}</div>
+                        @if($activity->short_description)
+                            <div class="family-card__sub">{{ $activity->short_description }}</div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="family-card__body">
+                    <div class="family-activity-meta">
                         @if($activity->activity_groups_count > 0)
                             <span class="family-chip family-chip--brand">{{ $activity->activity_groups_count }} {{ $activity->activity_groups_count === 1 ? 'grupo' : 'grupos' }}</span>
                         @endif
-                    </div>
-
-                    @if($activity->short_description)
-                        <p class="family-activity-card__desc">{{ $activity->short_description }}</p>
-                    @endif
-
-                    <div class="family-meta">
                         @if($activity->requires_ampa_membership)
                             <span class="family-chip family-chip--ampa">Solo socios/as AMPA</span>
                         @endif
                         @if($minPrice !== null)
-                            <span class="family-price">
+                            <span class="family-chip">
                                 @if((float) $minPrice === (float) $maxPrice)
-                                    {{ number_format($minPrice, 2, ',', '.') }} €/mes (socio)
+                                    {{ number_format($minPrice, 2, ',', '.') }} €/mes
                                 @else
-                                    {{ number_format($minPrice, 2, ',', '.') }}–{{ number_format($maxPrice, 2, ',', '.') }} €/mes (socio)
+                                    {{ number_format($minPrice, 2, ',', '.') }}–{{ number_format($maxPrice, 2, ',', '.') }} €/mes
                                 @endif
                             </span>
                         @endif
@@ -82,12 +83,12 @@
                             @endforeach
                         </div>
                     @endif
-                </div>
 
-                <div class="family-activity-card__foot">
-                    <a href="{{ route('familia.activities.show', $activity) }}" class="family-btn family-btn--primary family-btn--block">
-                        Ver grupos y apuntarse →
-                    </a>
+                    <div style="margin-top: 14px;">
+                        <a href="{{ route('familia.activities.show', $activity) }}" class="family-btn family-btn--primary">
+                            Ver grupos y apuntarse
+                        </a>
+                    </div>
                 </div>
             </div>
             @endforeach
