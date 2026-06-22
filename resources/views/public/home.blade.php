@@ -9,17 +9,29 @@
 @endphp
 
 <section class="pub-hero">
-    <div class="pub-container">
-        <span class="pub-eyebrow">Asociación de Madres y Padres del Alumnado</span>
-        <h1>{{ $ampaName }}</h1>
-        @if($schoolName)
-            <p class="pub-lead">Familias del {{ $schoolName }} organizadas para mejorar la experiencia educativa de nuestros hijos e hijas.</p>
-        @else
-            <p class="pub-lead">Familias organizadas para mejorar la experiencia educativa de nuestros hijos e hijas.</p>
-        @endif
-        <div class="pub-hero__cta">
-            <a href="{{ url('/familia/login') }}" class="pub-btn pub-btn--primary">Acceso familias</a>
-            <a href="{{ route('public.about') }}" class="pub-btn pub-btn--ghost">Conoce el AMPA</a>
+    <div class="pub-container pub-hero__grid">
+        <div>
+            <span class="pub-eyebrow">{{ $ampaName }}</span>
+            @if($schoolName)
+                <h1>Familias unidas por la educación en {{ $schoolName }}</h1>
+                <p class="pub-lead">Organizamos extraescolares, gestionamos formularios y consentimientos, y mantenemos a las familias del {{ $schoolName }} siempre informadas.</p>
+            @else
+                <h1>Familias unidas por la educación de nuestros hijos e hijas</h1>
+                <p class="pub-lead">Organizamos extraescolares, gestionamos formularios y consentimientos, y mantenemos a las familias siempre informadas.</p>
+            @endif
+            <div class="pub-hero__cta">
+                <a href="{{ url('/familia/login') }}" class="pub-btn pub-btn--primary">Acceso familias</a>
+                <a href="{{ route('public.about') }}" class="pub-btn pub-btn--ghost">Conoce el AMPA</a>
+            </div>
+        </div>
+        <div class="pub-hero__panel">
+            <span class="pub-hero__panel-label">Qué hacemos</span>
+            <ul class="pub-hero__list">
+                <li><span>🎨</span> Extraescolares</li>
+                <li><span>📝</span> Formularios y autorizaciones</li>
+                <li><span>✅</span> Consentimientos</li>
+                <li><span>📣</span> Comunicación con familias</li>
+            </ul>
         </div>
     </div>
 </section>
@@ -68,7 +80,7 @@
         @if($announcements->isEmpty())
             <div class="pub-empty">Aún no hay anuncios publicados. Vuelve pronto.</div>
         @else
-            <div class="pub-grid pub-grid--3">
+            <div class="pub-grid pub-grid--ann">
                 @foreach($announcements as $announcement)
                     @include('public.announcements._card', ['announcement' => $announcement])
                 @endforeach

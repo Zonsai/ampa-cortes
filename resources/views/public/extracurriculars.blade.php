@@ -13,9 +13,10 @@
         </div>
 
         @if($activeYear && $activities->isNotEmpty())
-            <div class="pub-grid pub-grid--3">
+            <div class="pub-grid pub-grid--cards">
                 @foreach($activities as $activity)
                     <div class="pub-card">
+                        <div class="pub-card__icon">🎯</div>
                         <h3>{{ $activity->name }}</h3>
                         @if($activity->short_description)
                             <p>{{ \Illuminate\Support\Str::limit($activity->short_description, 130) }}</p>

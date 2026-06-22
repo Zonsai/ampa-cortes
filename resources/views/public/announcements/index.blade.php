@@ -15,7 +15,7 @@
         @if($announcements->isEmpty())
             <div class="pub-empty">Aún no hay anuncios publicados. Vuelve pronto.</div>
         @else
-            <div class="pub-grid pub-grid--2">
+            <div class="pub-grid pub-grid--ann">
                 @foreach($announcements as $announcement)
                     @include('public.announcements._card', ['announcement' => $announcement])
                 @endforeach

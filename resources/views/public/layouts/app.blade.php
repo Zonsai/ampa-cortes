@@ -33,10 +33,11 @@
         .pub-header { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--pub-border); }
         .pub-header__bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; }
         .pub-brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
-        .pub-brand__logo { height: 38px; width: auto; object-fit: contain; }
-        .pub-brand__badge { display: inline-flex; align-items: center; justify-content: center; height: 38px; width: 38px; border-radius: 11px; background: var(--brand-primary); color: #fff; font-weight: 800; font-size: .8rem; }
-        .pub-brand__name { font-weight: 700; line-height: 1.1; }
-        .pub-brand__sub { font-size: .76rem; color: var(--pub-muted); }
+        .pub-brand__logo { height: 38px; width: auto; object-fit: contain; flex-shrink: 0; }
+        .pub-brand__badge { display: inline-flex; align-items: center; justify-content: center; height: 38px; width: 38px; border-radius: 11px; background: var(--brand-primary); color: #fff; font-weight: 800; font-size: .8rem; flex-shrink: 0; }
+        .pub-brand__text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+        .pub-brand__name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+        .pub-brand__sub { font-size: .76rem; color: var(--pub-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
         .pub-nav { display: flex; align-items: center; gap: 4px; }
         .pub-nav a { padding: 8px 12px; font-size: .92rem; font-weight: 500; color: var(--pub-muted); text-decoration: none; border-radius: 9px; }
         .pub-nav a:hover { color: var(--pub-text); background: var(--pub-soft); }
@@ -78,17 +79,27 @@
         .pub-lead { font-size: 1.1rem; color: var(--pub-muted); }
 
         /* Hero */
-        .pub-hero { padding: 64px 0 40px; }
+        .pub-hero { padding: 64px 0 44px; }
+        .pub-hero__grid { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: center; }
+        @media (min-width: 860px) { .pub-hero__grid { grid-template-columns: 1.15fr .85fr; } }
         .pub-hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
         .pub-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--brand-primary) 10%, white); color: var(--brand-primary); }
+        .pub-hero__panel { background: linear-gradient(155deg, color-mix(in srgb, var(--brand-primary) 12%, white), color-mix(in srgb, var(--brand-accent) 10%, white)); border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 26px; }
+        .pub-hero__panel-label { display: block; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--brand-primary); margin-bottom: 14px; }
+        .pub-hero__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+        .pub-hero__list li { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: .95rem; background: #fff; border-radius: 11px; padding: 11px 13px; box-shadow: var(--pub-shadow); }
+        .pub-hero__list li span { font-size: 1.15rem; }
 
         /* Cards grid */
         .pub-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
         @media (min-width: 640px) { .pub-grid--2 { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 860px) { .pub-grid--3 { grid-template-columns: repeat(3, 1fr); } .pub-grid--4 { grid-template-columns: repeat(4, 1fr); } }
+        .pub-grid--cards { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .pub-grid--ann { grid-template-columns: repeat(auto-fit, minmax(280px, 360px)); justify-content: start; }
         .pub-card { background: #fff; border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 22px; box-shadow: var(--pub-shadow); }
         .pub-card__icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 11px; background: color-mix(in srgb, var(--brand-primary) 12%, white); color: var(--brand-primary); font-size: 1.2rem; margin-bottom: 12px; }
         .pub-card p { color: var(--pub-muted); margin: 0; }
+        .pub-card--quiet { background: var(--pub-soft); box-shadow: none; }
 
         /* Announcement list */
         .pub-ann { display: block; background: #fff; border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 20px 22px; box-shadow: var(--pub-shadow); text-decoration: none; transition: border-color .15s, box-shadow .15s; }
@@ -116,7 +127,7 @@
         .pub-back:hover { text-decoration: underline; }
 
         /* CTA banner */
-        .pub-cta { background: var(--brand-primary); color: #fff; border-radius: var(--pub-radius); padding: 36px; text-align: center; }
+        .pub-cta { background: linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 70%, var(--brand-accent))); color: #fff; border-radius: var(--pub-radius); padding: 44px 36px; text-align: center; box-shadow: 0 20px 45px -20px color-mix(in srgb, var(--brand-primary) 55%, transparent); }
         .pub-cta h2 { color: #fff; }
         .pub-cta p { color: rgba(255,255,255,.85); }
         .pub-cta .pub-btn--ghost { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); }
@@ -150,7 +161,7 @@
                     @else
                         <span class="pub-brand__badge">{{ mb_strtoupper(mb_substr($ampaName, 0, 2)) }}</span>
                     @endif
-                    <span>
+                    <span class="pub-brand__text">
                         <span class="pub-brand__name">{{ $ampaName }}</span>
                         @if($schoolName)<span class="pub-brand__sub">{{ $schoolName }}</span>@endif
                     </span>
