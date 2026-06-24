@@ -22,14 +22,9 @@ class ScheduledSessionCalculator
         $enrollment->loadMissing(['activityGroup.activity.academicYear', 'activityGroup.exceptions', 'student']);
 
         $group = $enrollment->activityGroup;
-        $activity = $group->activity;
-        $academicYear = $activity->academicYear;
 
-        $groupStart = $group->effective_from ?? $academicYear->starts_at;
-        $groupEnd = $group->effective_until ?? $academicYear->ends_at;
-
-        $effectiveStart = $this->latest($groupStart, $enrollment->attendance_from);
-        $effectiveEnd = $this->earliest($groupEnd, $enrollment->attendance_until);
+        $effectiveStart = $this->latest($group->effectiveStartDate(), $enrollment->attendance_from);
+        $effectiveEnd = $this->earliest($group->effectiveEndDate(), $enrollment->attendance_until);
 
         $start = $this->latest($effectiveStart, $rangeStart);
         $end = $this->earliest($effectiveEnd, $rangeEnd);
@@ -57,14 +52,8 @@ class ScheduledSessionCalculator
     {
         $group->loadMissing(['activity.academicYear', 'exceptions']);
 
-        $activity = $group->activity;
-        $academicYear = $activity->academicYear;
-
-        $groupStart = $group->effective_from ?? $academicYear->starts_at;
-        $groupEnd = $group->effective_until ?? $academicYear->ends_at;
-
-        $start = $this->latest($groupStart, $rangeStart);
-        $end = $this->earliest($groupEnd, $rangeEnd);
+        $start = $this->latest($group->effectiveStartDate(), $rangeStart);
+        $end = $this->earliest($group->effectiveEndDate(), $rangeEnd);
 
         if ($start->greaterThan($end)) {
             return collect();

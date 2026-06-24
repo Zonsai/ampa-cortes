@@ -7,6 +7,7 @@ use App\Models\ActivityGroup;
 use App\Models\ExtracurricularActivity;
 use App\Models\Family;
 use App\Models\Student;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
@@ -71,6 +72,19 @@ class EnrollmentForm
                             )
                             ->required()
                             ->searchable(),
+                    ]),
+                Section::make('Periodo de asistencia')
+                    ->columns(2)
+                    ->schema([
+                        DatePicker::make('attendance_from')
+                            ->label('Incorporación')
+                            ->displayFormat('d/m/Y')
+                            ->helperText('Si se deja vacío, se hereda el inicio efectivo del grupo.'),
+                        DatePicker::make('attendance_until')
+                            ->label('Fin de asistencia')
+                            ->displayFormat('d/m/Y')
+                            ->afterOrEqual('attendance_from')
+                            ->helperText('Si se deja vacío, se hereda el fin efectivo del grupo.'),
                     ]),
                 Section::make('Notas')
                     ->schema([

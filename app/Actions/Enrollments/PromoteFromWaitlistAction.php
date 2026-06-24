@@ -17,9 +17,9 @@ class PromoteFromWaitlistAction
     /**
      * @throws ValidationException
      */
-    public function execute(Enrollment $enrollment): Enrollment
+    public function execute(Enrollment $enrollment, ?string $attendanceFrom = null): Enrollment
     {
-        return DB::transaction(function () use ($enrollment) {
+        return DB::transaction(function () use ($enrollment, $attendanceFrom) {
             if ($enrollment->status !== EnrollmentStatus::Waitlist) {
                 throw ValidationException::withMessages([
                     'status' => __('Solo se pueden promover inscripciones en lista de espera.'),
@@ -36,11 +36,17 @@ class PromoteFromWaitlistAction
 
             $statusBefore = $enrollment->status;
 
-            $enrollment->update([
+            $update = [
                 'status' => EnrollmentStatus::Enrolled,
                 'enrolled_at' => now(),
                 'waitlist_position' => null,
-            ]);
+            ];
+
+            if ($attendanceFrom !== null) {
+                $update['attendance_from'] = $attendanceFrom;
+            }
+
+            $enrollment->update($update);
 
             $this->syncGroupStatus->execute($group->fresh());
 

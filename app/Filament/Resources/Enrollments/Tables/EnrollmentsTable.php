@@ -21,6 +21,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -105,18 +106,26 @@ class EnrollmentsTable
                     ->label('Confirmar solicitud')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->requiresConfirmation()
                     ->modalHeading('Confirmar solicitud de inscripción')
                     ->modalDescription('Se inscribirá al alumno/a en el grupo. Esta acción no se puede deshacer desde el portal familiar.')
                     ->visible(fn (Enrollment $record) => auth()->user()?->can('update', $record) && $record->status === EnrollmentStatus::Pending)
-                    ->action(function (Enrollment $record): void {
+                    ->fillForm(fn (Enrollment $record): array => [
+                        'attendance_from' => $record->activityGroup->effectiveStartDate()->max(today())->format('Y-m-d'),
+                    ])
+                    ->schema([
+                        DatePicker::make('attendance_from')
+                            ->label('Fecha de incorporación')
+                            ->required()
+                            ->displayFormat('d/m/Y'),
+                    ])
+                    ->action(function (array $data, Enrollment $record): void {
                         if (! auth()->user()?->can('update', $record)) {
                             Notification::make()->title('Sin permiso')->danger()->send();
 
                             return;
                         }
                         try {
-                            app(ConfirmEnrollmentAction::class)->execute($record);
+                            app(ConfirmEnrollmentAction::class)->execute($record, $data['attendance_from']);
                             Notification::make()->title('Solicitud confirmada')->success()->send();
                         } catch (ValidationException $e) {
                             Notification::make()
@@ -257,20 +266,26 @@ class EnrollmentsTable
                         ->label('Dar de baja')
                         ->icon('heroicon-o-user-minus')
                         ->color('danger')
-                        ->requiresConfirmation()
                         ->visible(fn (Enrollment $record) => auth()->user()?->can('update', $record) && in_array($record->status, [
                             EnrollmentStatus::Enrolled,
                             EnrollmentStatus::PendingPayment,
                             EnrollmentStatus::Paid,
                         ]))
-                        ->action(function (Enrollment $record) {
+                        ->fillForm(fn (): array => ['attendance_until' => today()->format('Y-m-d')])
+                        ->schema([
+                            DatePicker::make('attendance_until')
+                                ->label('Fecha final de asistencia')
+                                ->required()
+                                ->displayFormat('d/m/Y'),
+                        ])
+                        ->action(function (array $data, Enrollment $record) {
                             if (! auth()->user()?->can('update', $record)) {
                                 Notification::make()->title('Sin permiso')->danger()->send();
 
                                 return;
                             }
                             try {
-                                app(DropEnrollmentAction::class)->execute($record);
+                                app(DropEnrollmentAction::class)->execute($record, attendanceUntil: $data['attendance_until']);
                                 $waitlistCount = Enrollment::where('activity_group_id', $record->activity_group_id)
                                     ->where('status', EnrollmentStatus::Waitlist)
                                     ->count();
@@ -332,18 +347,26 @@ class EnrollmentsTable
                         ->label('Pasar a inscrito/a')
                         ->icon('heroicon-o-arrow-up-circle')
                         ->color('success')
-                        ->requiresConfirmation()
                         ->modalHeading('Pasar a inscrito/a')
                         ->modalDescription('Se inscribirá al alumno/a de esta fila. Solo se aplica a esta inscripción concreta.')
                         ->visible(fn (Enrollment $record) => auth()->user()?->can('update', $record) && $record->status === EnrollmentStatus::Waitlist)
-                        ->action(function (Enrollment $record) {
+                        ->fillForm(fn (Enrollment $record): array => [
+                            'attendance_from' => $record->activityGroup->effectiveStartDate()->max(today())->format('Y-m-d'),
+                        ])
+                        ->schema([
+                            DatePicker::make('attendance_from')
+                                ->label('Fecha de incorporación')
+                                ->required()
+                                ->displayFormat('d/m/Y'),
+                        ])
+                        ->action(function (array $data, Enrollment $record) {
                             if (! auth()->user()?->can('update', $record)) {
                                 Notification::make()->title('Sin permiso')->danger()->send();
 
                                 return;
                             }
                             try {
-                                app(PromoteFromWaitlistAction::class)->execute($record);
+                                app(PromoteFromWaitlistAction::class)->execute($record, $data['attendance_from']);
                                 Notification::make()
                                     ->title('Alumno/a inscrito/a correctamente')
                                     ->success()

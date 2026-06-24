@@ -28,6 +28,14 @@ class AuditLog extends Model
 
     public const ENROLLMENT_REQUESTED_WAITLIST = 'enrollment.requested_waitlist';
 
+    public const ENROLLMENT_ATTENDANCE_UPDATED = 'enrollment.attendance_updated';
+
+    public const GROUP_EXCEPTION_CREATED = 'group_exception.created';
+
+    public const GROUP_EXCEPTION_UPDATED = 'group_exception.updated';
+
+    public const GROUP_EXCEPTION_DELETED = 'group_exception.deleted';
+
     public const USER_CREATED = 'user.created';
 
     public const USER_PASSWORD_RESET = 'user.password_reset';
@@ -104,6 +112,10 @@ class AuditLog extends Model
             self::ENROLLMENT_DROPPED => 'Inscripción dada de baja',
             self::ENROLLMENT_REQUESTED => 'Solicitud familiar',
             self::ENROLLMENT_REQUESTED_WAITLIST => 'Solicitud familiar (lista de espera)',
+            self::ENROLLMENT_ATTENDANCE_UPDATED => 'Fechas de asistencia actualizadas',
+            self::GROUP_EXCEPTION_CREATED => 'Excepción de grupo creada',
+            self::GROUP_EXCEPTION_UPDATED => 'Excepción de grupo editada',
+            self::GROUP_EXCEPTION_DELETED => 'Excepción de grupo borrada',
             self::USER_CREATED => 'Usuario creado',
             self::USER_PASSWORD_RESET => 'Contraseña restablecida',
             self::USER_ACTIVATED => 'Usuario activado',

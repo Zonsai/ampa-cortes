@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ActivityGroupStatus;
 use App\Enums\EnrollmentStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\ActivityGroupFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -97,6 +98,18 @@ class ActivityGroup extends Model
     public function exceptions()
     {
         return $this->hasMany(ActivityGroupException::class);
+    }
+
+    /** Effective start date: own effective_from, or the activity's academic year start. */
+    public function effectiveStartDate(): CarbonImmutable
+    {
+        return CarbonImmutable::parse($this->effective_from ?? $this->activity->academicYear->starts_at);
+    }
+
+    /** Effective end date: own effective_until, or the activity's academic year end. */
+    public function effectiveEndDate(): CarbonImmutable
+    {
+        return CarbonImmutable::parse($this->effective_until ?? $this->activity->academicYear->ends_at);
     }
 
     public function weekdaysLabel(): string

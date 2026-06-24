@@ -17,9 +17,9 @@ class DropEnrollmentAction
     /**
      * @throws ValidationException
      */
-    public function execute(Enrollment $enrollment, ?string $internalNotes = null): Enrollment
+    public function execute(Enrollment $enrollment, ?string $internalNotes = null, ?string $attendanceUntil = null): Enrollment
     {
-        return DB::transaction(function () use ($enrollment, $internalNotes) {
+        return DB::transaction(function () use ($enrollment, $internalNotes, $attendanceUntil) {
             $terminableStatuses = [
                 EnrollmentStatus::Enrolled,
                 EnrollmentStatus::PendingPayment,
@@ -34,12 +34,18 @@ class DropEnrollmentAction
 
             $statusBefore = $enrollment->status;
 
-            $enrollment->update([
+            $update = [
                 'status' => EnrollmentStatus::Dropped,
                 'ended_at' => now(),
                 'waitlist_position' => null,
                 'internal_notes' => $internalNotes ?? $enrollment->internal_notes,
-            ]);
+            ];
+
+            if ($attendanceUntil !== null) {
+                $update['attendance_until'] = $attendanceUntil;
+            }
+
+            $enrollment->update($update);
 
             $this->syncGroupStatus->execute($enrollment->activityGroup);
 

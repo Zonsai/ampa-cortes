@@ -5,17 +5,14 @@ namespace App\Filament\Resources\ExtracurricularActivities\RelationManagers;
 use App\Enums\ActivityGroupStatus;
 use App\Exports\Enrollments\EnrollmentsByGroupExport;
 use App\Exports\Enrollments\WaitlistExport;
-use App\Models\Grade;
+use App\Filament\Resources\ActivityGroups\ActivityGroupResource;
+use App\Filament\Resources\ActivityGroups\Schemas\ActivityGroupForm;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\TimePicker;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -34,63 +31,7 @@ class ActivityGroupsRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                TextInput::make('name')
-                    ->label('Nombre del grupo')
-                    ->maxLength(100)
-                    ->required(),
-                CheckboxList::make('weekdays')
-                    ->label('Días de la semana')
-                    ->options([
-                        1 => 'Lunes',
-                        2 => 'Martes',
-                        3 => 'Miércoles',
-                        4 => 'Jueves',
-                        5 => 'Viernes',
-                    ])
-                    ->required()
-                    ->columns(5),
-                TimePicker::make('starts_at')
-                    ->label('Hora inicio')
-                    ->seconds(false)
-                    ->required(),
-                TimePicker::make('ends_at')
-                    ->label('Hora fin')
-                    ->seconds(false)
-                    ->required(),
-                TextInput::make('max_spots')
-                    ->label('Plazas máximas')
-                    ->numeric()
-                    ->minValue(1)
-                    ->required(),
-                TextInput::make('price_member')
-                    ->label('Precio socio (€)')
-                    ->numeric()
-                    ->minValue(0)
-                    ->required(),
-                TextInput::make('price_non_member')
-                    ->label('Precio no socio (€)')
-                    ->numeric()
-                    ->minValue(0)
-                    ->required(),
-                TextInput::make('provider')
-                    ->label('Empresa/Proveedor')
-                    ->maxLength(100),
-                TextInput::make('location')
-                    ->label('Ubicación')
-                    ->maxLength(150),
-                Select::make('status')
-                    ->label('Estado')
-                    ->options(ActivityGroupStatus::class)
-                    ->default(ActivityGroupStatus::Open->value)
-                    ->required(),
-                Select::make('grades')
-                    ->label('Cursos admitidos')
-                    ->multiple()
-                    ->options(Grade::query()->orderBy('sort_order')->pluck('name', 'id'))
-                    ->relationship('grades', 'name'),
-            ]);
+        return ActivityGroupForm::configure($schema);
     }
 
     public function table(Table $table): Table
@@ -140,6 +81,11 @@ class ActivityGroupsRelationManager extends RelationManager
                         new WaitlistExport($record->id),
                         'lista-espera-'.str($record->name)->slug().'.xlsx',
                     )),
+                Action::make('exceptions')
+                    ->label('Excepciones')
+                    ->icon('heroicon-o-calendar-days')
+                    ->color('gray')
+                    ->url(fn ($record) => ActivityGroupResource::getUrl('edit', ['record' => $record])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
