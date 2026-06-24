@@ -20,6 +20,8 @@ class ActivityGroup extends Model
         'weekdays',
         'starts_at',
         'ends_at',
+        'effective_from',
+        'effective_until',
         'max_spots',
         'price_member',
         'price_non_member',
@@ -32,6 +34,8 @@ class ActivityGroup extends Model
     {
         return [
             'weekdays' => 'array',
+            'effective_from' => 'date',
+            'effective_until' => 'date',
             'status' => ActivityGroupStatus::class,
             'price_member' => 'decimal:2',
             'price_non_member' => 'decimal:2',
@@ -88,6 +92,11 @@ class ActivityGroup extends Model
     public function nextWaitlistPosition(): int
     {
         return (int) $this->waitlistEnrollments()->max('waitlist_position') + 1;
+    }
+
+    public function exceptions()
+    {
+        return $this->hasMany(ActivityGroupException::class);
     }
 
     public function weekdaysLabel(): string

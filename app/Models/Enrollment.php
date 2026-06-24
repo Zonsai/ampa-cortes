@@ -32,6 +32,8 @@ class Enrollment extends Model
         'internal_notes',
         'paid_at',
         'payment_method',
+        'attendance_from',
+        'attendance_until',
     ];
 
     protected function casts(): array
@@ -45,6 +47,8 @@ class Enrollment extends Model
             'paid_at' => 'datetime',
             'payment_method' => PaymentMethod::class,
             'amount' => 'decimal:2',
+            'attendance_from' => 'date',
+            'attendance_until' => 'date',
         ];
     }
 
