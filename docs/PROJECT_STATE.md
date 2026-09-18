@@ -72,7 +72,7 @@ Todos con modelo, migración, Filament resource (cuando aplica), policy y tests.
 
 ## 6. Flujo de inscripciones (`App\Enums\EnrollmentStatus`)
 
-Estados: `pending` → `enrolled` | `waitlist` → `pending_payment` → `paid`; con salidas a `dropped` (baja) o `cancelled` (cancelada). `pending` está reservado para el futuro autoservicio familiar.
+Estados: `pending` → `enrolled` | `waitlist` → `pending_payment` → `paid`; con salidas a `dropped` (baja) o `cancelled` (cancelada). `pending` es el estado real que genera hoy `RequestFamilyEnrollmentAction` cuando una familia solicita plaza desde el portal `/familia` y hay plazas físicamente disponibles: la plaza NO se reserva en ese momento (varias familias pueden quedar `pending` para el mismo hueco) hasta que el AMPA confirma la solicitud (`ConfirmEnrollmentAction`). Si no hay plazas disponibles, la solicitud entra directamente en `waitlist`.
 
 Acciones principales (`app/Actions/Enrollments/`):
 
