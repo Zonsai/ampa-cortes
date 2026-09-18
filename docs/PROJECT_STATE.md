@@ -2,7 +2,7 @@
 
 > Documento de contexto interno. Léelo al empezar cualquier sesión nueva antes de tocar código.
 > Generado a partir del estado real del repositorio (código, migraciones, tests, `git log`), no de memoria de chat.
-> Última actualización: 2026-09-18 (rama `upgrade/laravel-13`, tras upgrade técnico Laravel 12→13).
+> Última actualización: 2026-09-18 (Laravel 13 integrado en `main`, commit `996b494`).
 
 ## 1. Stack actual
 
@@ -18,7 +18,7 @@
 | PHPUnit | v11.5 |
 | Base de datos | MySQL en local/producción (`utf8mb4_unicode_ci`); SQLite en memoria para tests (`phpunit.xml`) |
 
-Upgrade a Laravel 13 hecho en rama técnica `upgrade/laravel-13`, cambio mínimo (solo `laravel/framework` y `laravel/tinker`; sin tocar Filament/Livewire/Spatie/Excel/PHPUnit). Ningún breaking change de la guía oficial 12→13 resultó aplicable a este código tras auditoría (CSRF middleware sigue con alias `VerifyCsrfToken`, sin polimorfismos con pivote custom, sin `upsert()`, sin instanciación de modelos en `booted()`, sin notificaciones en cola). 634 tests / 1670 aserciones siguen en verde.
+Upgrade a Laravel 13 ya integrado en `main` (hecho originalmente en la rama técnica `upgrade/laravel-13`, fusionada por fast-forward), cambio mínimo (solo `laravel/framework` y `laravel/tinker`; sin tocar Filament/Livewire/Spatie/Excel/PHPUnit). Ningún breaking change de la guía oficial 12→13 resultó aplicable a este código tras auditoría (CSRF middleware sigue con alias `VerifyCsrfToken`, sin polimorfismos con pivote custom, sin `upsert()`, sin instanciación de modelos en `booted()`, sin notificaciones en cola). 634 tests / 1670 aserciones siguen en verde.
 
 No hay npm/JS custom más allá del scaffolding estándar de Laravel (Vite + Filament assets). No usar paquetes nuevos sin decisión explícita.
 
@@ -105,7 +105,6 @@ Acciones principales (`app/Actions/Enrollments/`):
 
 ## 8. Próximas fases recomendadas (no implementadas)
 
-- Fusionar `upgrade/laravel-13` a `main` tras revisión (upgrade técnico ya hecho y validado en esa rama; ver §1).
 - Calendario familiar semanal (UI que consuma `ScheduledSessionCalculator`).
 - Exportación `.ics`.
 - Integración GIR.
