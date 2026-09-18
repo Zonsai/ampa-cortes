@@ -1,3 +1,30 @@
+# Portal AMPA Cortés de Aragón — contexto del proyecto
+
+> **Al empezar cualquier sesión nueva, lee primero [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md).**
+> Contiene el estado real del stack, roles, módulos implementados, flujo de inscripciones, estado del calendario y próximas fases. Este archivo (`CLAUDE.md`) solo resume reglas de trabajo; el estado del proyecto vive en `docs/PROJECT_STATE.md` y debe mantenerse actualizado ahí, no aquí.
+
+## Alcance actual
+
+Fase actual: gestión completa de familias/alumnos/extraescolares/inscripciones/pagos manuales/formularios/consentimientos/anuncios/branding/audit log + front público + zona familiar + base técnica de calendario (horarios recurrentes, excepciones, periodo de asistencia). **No** hay todavía: vista de calendario visual, `.ics`, GIR, importadores, banco de libros, ni upgrade a Laravel 13.
+
+## Reglas de trabajo (resumen)
+
+- No implementar funcionalidades nuevas fuera de lo pedido explícitamente en la conversación.
+- No actualizar Laravel ni cambiar dependencias (`composer.json`/`composer update`) sin aprobación explícita.
+- No tocar calendario familiar, `.ics`, GIR, banco de libros ni front público salvo que se pida expresamente.
+- Todo cambio de código va acompañado de tests (happy path + fallos + edge cases); no se publica sin tests en verde.
+- Fases pequeñas y testeadas, no bloques grandes de funcionalidad.
+
+## Comandos de verificación
+
+```bash
+php artisan test --compact                              # suite completa
+php artisan test --compact tests/Feature/NombreTest.php  # un archivo
+php artisan test --compact --filter=nombreTest           # un test
+vendor/bin/pint --dirty --format agent                    # formato tras tocar PHP
+git diff --check && git status --short && git diff --stat # verificación previa a informar del estado
+```
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
