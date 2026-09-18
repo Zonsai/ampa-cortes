@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Familia\ActivitiesController;
 use App\Http\Controllers\Familia\AuthController;
+use App\Http\Controllers\Familia\CalendarController;
 use App\Http\Controllers\Familia\ChildrenController;
 use App\Http\Controllers\Familia\ConsentController;
 use App\Http\Controllers\Familia\DashboardController;
@@ -21,6 +22,7 @@ Route::prefix('familia')->name('familia.')->group(function () {
     Route::middleware('familia')->group(function () {
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('/hijos', ChildrenController::class)->name('children');
+        Route::get('/calendario', CalendarController::class)->name('calendar');
         Route::get('/extraescolares', [ActivitiesController::class, 'index'])->name('activities.index');
         Route::get('/extraescolares/{activity}', [ActivitiesController::class, 'show'])->name('activities.show');
         Route::post('/inscribir', [EnrollmentController::class, 'store'])->name('enroll');
