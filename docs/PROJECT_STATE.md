@@ -2,20 +2,23 @@
 
 > Documento de contexto interno. Léelo al empezar cualquier sesión nueva antes de tocar código.
 > Generado a partir del estado real del repositorio (código, migraciones, tests, `git log`), no de memoria de chat.
-> Última actualización: 2026-09-18 (commit `ce336fe`).
+> Última actualización: 2026-09-18 (rama `upgrade/laravel-13`, tras upgrade técnico Laravel 12→13).
 
 ## 1. Stack actual
 
 | Componente | Versión |
 |---|---|
 | PHP | 8.3 |
-| Laravel | 12.62 (`laravel/framework ^12.0`) |
+| Laravel | 13.32.0 (`laravel/framework ^13.0`) |
+| Laravel Tinker | v3.0.2 (`^3.0`) |
 | Filament | v4.11.7 |
 | Livewire | v3.8.1 |
 | Spatie Laravel Permission | v6.25 |
 | Laravel Excel (maatwebsite/excel) | v3.1.69 |
 | PHPUnit | v11.5 |
 | Base de datos | MySQL en local/producción (`utf8mb4_unicode_ci`); SQLite en memoria para tests (`phpunit.xml`) |
+
+Upgrade a Laravel 13 hecho en rama técnica `upgrade/laravel-13`, cambio mínimo (solo `laravel/framework` y `laravel/tinker`; sin tocar Filament/Livewire/Spatie/Excel/PHPUnit). Ningún breaking change de la guía oficial 12→13 resultó aplicable a este código tras auditoría (CSRF middleware sigue con alias `VerifyCsrfToken`, sin polimorfismos con pivote custom, sin `upsert()`, sin instanciación de modelos en `booted()`, sin notificaciones en cola). 634 tests / 1670 aserciones siguen en verde.
 
 No hay npm/JS custom más allá del scaffolding estándar de Laravel (Vite + Filament assets). No usar paquetes nuevos sin decisión explícita.
 
@@ -90,7 +93,7 @@ Acciones principales (`app/Actions/Enrollments/`):
 
 - No usar el modelo `Family` directamente como entidad gestionable en Filament fuera del `FamilyResource` existente; la relación familia↔usuario se resuelve siempre vía `Guardian.user_id` (ver `App\Models\User`), no se expone login de familias en el panel admin.
 - No publicar cambios sin tests que los cubran (happy path + fallos + edge cases). Ver reglas PHPUnit en `CLAUDE.md`.
-- No mezclar la futura migración a Laravel 13 con desarrollo de features; iría en rama técnica separada.
+- No mezclar upgrades de framework o dependencias mayores con desarrollo de features; realizarlos siempre en una rama técnica separada.
 - No añadir paquetes/dependencias npm o Composer sin decisión explícita del usuario.
 - Mantener fases pequeñas y testeadas — cada módulo se ha añadido con su propia migración, tests y (si aplica) resource Filament, no en bloques grandes.
 - Convenciones de estructura Filament 4 (heredadas de memoria de sesiones previas, verificar si cambian):
@@ -102,7 +105,7 @@ Acciones principales (`app/Actions/Enrollments/`):
 
 ## 8. Próximas fases recomendadas (no implementadas)
 
-- Upgrade a Laravel 13 en rama técnica separada.
+- Fusionar `upgrade/laravel-13` a `main` tras revisión (upgrade técnico ya hecho y validado en esa rama; ver §1).
 - Calendario familiar semanal (UI que consuma `ScheduledSessionCalculator`).
 - Exportación `.ics`.
 - Integración GIR.
