@@ -14,6 +14,7 @@ Fase actual: gestión completa de familias/alumnos/extraescolares/inscripciones/
 - No tocar calendario familiar, `.ics`, GIR, banco de libros ni front público salvo que se pida expresamente.
 - Todo cambio de código va acompañado de tests (happy path + fallos + edge cases); no se publica sin tests en verde.
 - Fases pequeñas y testeadas, no bloques grandes de funcionalidad.
+- Antes de cualquier tarea de UI, diseño, Blade o CSS del front público o de la zona familiar, leer y respetar [DESIGN.md](DESIGN.md).
 
 ## Comandos de verificación
 

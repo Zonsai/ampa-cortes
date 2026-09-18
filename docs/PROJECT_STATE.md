@@ -2,7 +2,7 @@
 
 > Documento de contexto interno. Léelo al empezar cualquier sesión nueva antes de tocar código.
 > Generado a partir del estado real del repositorio (código, migraciones, tests, `git log`), no de memoria de chat.
-> Última actualización: 2026-09-18 (parches de seguridad de dependencias sobre Laravel 13, ver nota abajo).
+> Última actualización: 2026-09-18 (calendario familiar semanal con timetable desktop + identidad visual definitiva petróleo/terracota, ver §4 y §10).
 
 ## 1. Stack actual
 
@@ -54,18 +54,25 @@ Todos con modelo, migración, Filament resource (cuando aplica), policy y tests.
 
 ## 4. Estado del calendario
 
-**Ya existe** (base técnica de horarios, no calendario visual):
+**Ya existe** (base técnica de horarios + calendario visual familiar):
 
 - `ActivityGroup`: horario recurrente semanal — `weekdays` (array ISO 1–7), `starts_at`/`ends_at` (hora), `effective_from`/`effective_until` (rango de fechas del grupo, opcional; si es null cae al año académico de la actividad).
 - `ActivityGroupException`: excepciones puntuales sobre una fecha recurrente — tres tipos (`App\Enums\ExceptionType`): `cancelled` (se cancela una sesión), `modified` (cambia fecha/hora/ubicación de una sesión), `extra` (sesión añadida fuera del patrón). Cada tipo tiene validación de coherencia en `booted()` (p. ej. una `extra` no puede duplicar una sesión regular).
 - `Enrollment.attendance_from` / `attendance_until`: acota el periodo en que un alumno concreto asiste dentro del grupo (puede ser más corto que el rango del grupo). Gestionado por acciones dedicadas (`App\Actions\Enrollments\*`), probado en `tests/Feature/EnrollmentAttendanceActionsTest.php`.
-- `App\Services\ScheduledSessionCalculator` + `App\Support\ScheduledSession`: calcula la lista concreta de sesiones (fecha, hora, ubicación) para un grupo o para una inscripción dentro de un rango de fechas, aplicando excepciones y periodo de asistencia. Es la pieza central para cualquier vista de calendario futura. Cubierto por `tests/Feature/ScheduledSessionCalculatorTest.php`.
+- `App\Services\ScheduledSessionCalculator` + `App\Support\ScheduledSession`: calcula la lista concreta de sesiones (fecha, hora, ubicación) para un grupo o para una inscripción dentro de un rango de fechas, aplicando excepciones y periodo de asistencia. Es la pieza central que consume el calendario visual. Cubierto por `tests/Feature/ScheduledSessionCalculatorTest.php`.
 - Filament: `ActivityGroupResource` con `RelationManager` de excepciones (`ExceptionsRelationManager`), tests en `ActivityGroupExceptionsFilamentTest.php`.
+- **Calendario familiar semanal** (`/familia/calendario`, `App\Http\Controllers\Familia\CalendarController`, `resources/views/familia/calendar/index.blade.php`) — actualmente en la rama `feature/family-calendar`, sin fusionar a `main` todavía:
+  - Filtra por inscripciones activas de la familia (estados `Enrolled`/`PendingPayment`/`Paid`) y por hijo/a seleccionado (`?student=`, con guarda contra acceso cruzado entre familias).
+  - Navegación semanal normalizada a lunes (`?week=`), con semana por defecto = semana actual si el curso activo cubre hoy, o primera semana del curso en caso contrario.
+  - **Timetable de escritorio (≥860px)**: eje horario compartido y posición/duración de cada sesión calculados en PHP (`CalendarController::buildTimetable()`) en minutos desde el inicio del rango visible de la semana — sin JavaScript, sin librería de calendario. Solapamientos reales entre hijos/as resueltos por partición de intervalos (`assignLanes()`), mostrados en paralelo (nunca uno oculta a otro).
+  - **Agenda vertical en móvil** (<860px): tarjetas por sesión agrupadas por día, sin cambios respecto al primer diseño.
+  - Excepciones `Modified` se muestran inline con indicación de cambio; `Cancelled` aparece como aviso en "Avisos de esta semana", nunca como sesión.
+  - Paleta de 6 colores por hijo/a (identidad de alumno/a, independiente de la marca — ver `DESIGN.md` §3.5).
+  - Cubierto por 19 tests en `tests/Feature/FamilyCalendarTest.php` (acceso, filtros, navegación, excepciones, cálculo del timetable).
+  - Refinamiento visual pendiente (contenedor propio más ancho, información mínima por sesión) documentado en `DESIGN.md` §23.2 — no implementado todavía.
 
 **NO existe todavía**:
 
-- Ninguna vista visual de calendario (ni admin ni familiar). El cálculo de sesiones existe como servicio de dominio, pero no hay UI que lo consuma.
-- Calendario familiar semanal (portal `/familia`).
 - Exportación `.ics`.
 - Asistencia real (pase de lista por sesión). `attendance_from/until` es un **periodo de vigencia**, no un registro de asistencia por clase.
 - Integración GIR.
@@ -107,7 +114,6 @@ Acciones principales (`app/Actions/Enrollments/`):
 
 ## 8. Próximas fases recomendadas (no implementadas)
 
-- Calendario familiar semanal (UI que consuma `ScheduledSessionCalculator`).
 - Exportación `.ics`.
 - Integración GIR.
 - Importadores (de datos existentes, matrícula, etc.).
@@ -128,5 +134,9 @@ npm install && npm run build   # o npm run dev / composer run dev para todo junt
 - **Seeders solo en entorno `local`**: `AdminUserSeeder` (usuario demo `admin@ampa.test` / `password`, rol `super_admin`), `DemoDataSeeder` (datos de ejemplo). Hay además `LocalDemoSeeder` para enriquecer datos de demo/QA visual — también restringido a `local`.
 - **Producción**: crear el primer admin con `php artisan ampa:create-admin` (`App\Console\Commands\CreateAdminCommand`); `AdminUserSeeder` se niega a ejecutarse fuera de `local`.
 - **Panel admin**: `/admin`. **Zona familiar**: `/familia`. **Front público**: `/`.
-- **Tests**: `php artisan test --compact` (634 tests / 1670 aserciones pasando a fecha de este documento, DB SQLite en memoria vía `phpunit.xml`). Para un archivo: `php artisan test --compact tests/Feature/NombreTest.php`. Para un test concreto: `php artisan test --compact --filter=nombreTest`.
+- **Tests**: `php artisan test --compact` (653 tests / 1734 aserciones pasando a fecha de este documento, incluye los 19 de `FamilyCalendarTest.php`; DB SQLite en memoria vía `phpunit.xml`). Para un archivo: `php artisan test --compact tests/Feature/NombreTest.php`. Para un test concreto: `php artisan test --compact --filter=nombreTest`.
 - **Formato de código**: `vendor/bin/pint --dirty --format agent` tras tocar PHP.
+
+## 10. Identidad visual
+
+La identidad visual definitiva es **petróleo + terracota** (violeta retirado) — contrato completo en [`DESIGN.md`](../DESIGN.md). `primary_color`/`accent_color` de `AppSettings`/`BrandingSettings` siguen siendo configurables por el AMPA vía Filament; los hex de arriba son ahora sus **valores por defecto** (`AppSettings::$defaults`, `AppSettingsSeeder`, `LocalDemoSeeder`), no un color hardcodeado. La paleta de 6 colores por hijo/a del calendario familiar también se actualizó (ya no protagonizada por el violeta) — ver `DESIGN.md` §3.5. El rediseño visual completo de Home y del dashboard familiar queda documentado como dirección aprobada en `DESIGN.md` §26–27, pendiente de implementación.
