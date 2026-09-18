@@ -2,7 +2,7 @@
 
 > Documento de contexto interno. Léelo al empezar cualquier sesión nueva antes de tocar código.
 > Generado a partir del estado real del repositorio (código, migraciones, tests, `git log`), no de memoria de chat.
-> Última actualización: 2026-09-18 (Laravel 13 integrado en `main`, commit `996b494`).
+> Última actualización: 2026-09-18 (parches de seguridad de dependencias sobre Laravel 13, ver nota abajo).
 
 ## 1. Stack actual
 
@@ -11,14 +11,16 @@
 | PHP | 8.3 |
 | Laravel | 13.32.0 (`laravel/framework ^13.0`) |
 | Laravel Tinker | v3.0.2 (`^3.0`) |
-| Filament | v4.11.7 |
-| Livewire | v3.8.1 |
+| Filament | v4.13.2 |
+| Livewire | v3.8.9 |
 | Spatie Laravel Permission | v6.25 |
-| Laravel Excel (maatwebsite/excel) | v3.1.69 |
+| Laravel Excel (maatwebsite/excel) | v3.1.70 |
 | PHPUnit | v11.5 |
 | Base de datos | MySQL en local/producción (`utf8mb4_unicode_ci`); SQLite en memoria para tests (`phpunit.xml`) |
 
 Upgrade a Laravel 13 ya integrado en `main` (hecho originalmente en la rama técnica `upgrade/laravel-13`, fusionada por fast-forward), cambio mínimo (solo `laravel/framework` y `laravel/tinker`; sin tocar Filament/Livewire/Spatie/Excel/PHPUnit). Ningún breaking change de la guía oficial 12→13 resultó aplicable a este código tras auditoría (CSRF middleware sigue con alias `VerifyCsrfToken`, sin polimorfismos con pivote custom, sin `upsert()`, sin instanciación de modelos en `booted()`, sin notificaciones en cola). 634 tests / 1670 aserciones siguen en verde.
+
+Posteriormente se aplicó una tanda de parches de seguridad (patch/minor, sin subir ninguna major): `filament/filament` 4.11.7→4.13.2, `livewire/livewire` 3.8.1→3.8.9, `maatwebsite/excel` 3.1.69→3.1.70 y `phpoffice/phpspreadsheet` (transitivo) 1.30.5→1.30.7. Resolvió los 8 advisories de `composer audit` vigentes en ese momento (3 en Filament, 1 en Livewire, 1 en Laravel Excel, 3 en PHPSpreadsheet). `composer audit` queda en "No security vulnerability advisories found." 634 tests / 1670 aserciones siguen en verde.
 
 No hay npm/JS custom más allá del scaffolding estándar de Laravel (Vite + Filament assets). No usar paquetes nuevos sin decisión explícita.
 
