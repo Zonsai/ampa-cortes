@@ -7,8 +7,8 @@
     <title>@yield('title', 'Portal Familias') — {{ $branding['ampa_name'] ?? 'AMPA' }}</title>
     <style>
         :root {
-            --brand-primary: {{ $branding['primary_color'] ?? '#4f46e5' }};
-            --brand-accent: {{ $branding['accent_color'] ?? '#0f766e' }};
+            --brand-primary: {{ $branding['primary_color'] ?? '#245b63' }};
+            --brand-accent: {{ $branding['accent_color'] ?? '#4f7c70' }};
             --fam-bg: #f4f5f7;
             --fam-surface: #ffffff;
             --fam-border: #e5e7eb;
@@ -75,18 +75,17 @@
         .family-chip { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #f3f4f6; color: var(--fam-muted); border: 1px solid transparent; white-space: nowrap; }
         .family-chip--member { background: #ecfdf3; color: #15803d; }
         .family-chip--ampa { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-        .family-chip--brand { background: #eef2ff; color: var(--brand-primary); }
-        .family-chip--count { background: #eef2ff; color: var(--brand-primary); }
+        .family-chip--brand { background: color-mix(in srgb, var(--brand-primary) 12%, white); color: var(--brand-primary); }
+        .family-chip--count { background: color-mix(in srgb, var(--brand-primary) 12%, white); color: var(--brand-primary); }
 
         /* Alerts */
         .family-alerts { margin-bottom: 22px; display: grid; gap: 10px; }
         .family-alert { display: flex; gap: 10px; border-radius: var(--fam-radius-sm); padding: 12px 14px; font-size: .88rem; line-height: 1.45; border: 1px solid transparent; }
         .family-alert a { color: inherit; font-weight: 600; }
-        .family-alert--brand { background: #eef2ff; border-color: #c7d2fe; color: #3730a3; }
+        .family-alert--brand { background: color-mix(in srgb, var(--brand-primary) 8%, white); border-color: color-mix(in srgb, var(--brand-primary) 30%, white); color: var(--brand-primary); }
         .family-alert--info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
         .family-alert--warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
         .family-alert--success { background: #ecfdf3; border-color: #bbf7d0; color: #166534; }
-        .family-alert--violet { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
 
         /* Stats grid */
         .family-stats-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 26px; }
@@ -107,7 +106,7 @@
         /* Pending actions ("Pendiente de ti") */
         .family-pending-list { display: grid; gap: 10px; }
         .family-pending-item { display: flex; align-items: flex-start; gap: 12px; background: var(--fam-surface); border: 1px solid var(--fam-border); border-radius: var(--fam-radius-sm); padding: 13px 14px; box-shadow: var(--fam-shadow); }
-        .family-pending-item__icon { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: #eef2ff; color: var(--brand-primary); }
+        .family-pending-item__icon { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: color-mix(in srgb, var(--brand-primary) 12%, white); color: var(--brand-primary); }
         .family-pending-item__icon svg { width: 18px; height: 18px; }
         .family-pending-item__body { flex: 1 1 auto; min-width: 0; }
         .family-pending-item__title { font-weight: 600; font-size: .92rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -175,7 +174,7 @@
         .family-action-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media (min-width: 560px) { .family-action-grid { grid-template-columns: repeat(2, 1fr); } }
         .family-resource-card { display: block; background: var(--fam-surface); border: 1px solid var(--fam-border); border-radius: var(--fam-radius); padding: 16px; box-shadow: var(--fam-shadow); text-decoration: none; color: inherit; transition: border-color .15s, box-shadow .15s; }
-        .family-resource-card:hover { border-color: #c7d2fe; box-shadow: var(--fam-shadow-hover); }
+        .family-resource-card:hover { border-color: color-mix(in srgb, var(--brand-primary) 30%, white); box-shadow: var(--fam-shadow-hover); }
         .family-resource-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .family-resource-card__title { font-weight: 600; }
         .family-resource-card:hover .family-resource-card__title { color: var(--brand-primary); }

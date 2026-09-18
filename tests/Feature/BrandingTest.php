@@ -54,8 +54,8 @@ class BrandingTest extends TestCase
 
         $this->assertSame('AMPA Cortés de Aragón', $settings['ampa_name']);
         $this->assertSame('CEIP Cortés de Aragón', $settings['school_name']);
-        $this->assertSame('#4f46e5', $settings['primary_color']);
-        $this->assertSame('#0f766e', $settings['accent_color']);
+        $this->assertSame('#245b63', $settings['primary_color']);
+        $this->assertSame('#4f7c70', $settings['accent_color']);
         $this->assertNull($settings['ampa_logo_path']);
         $this->assertNull($settings['school_logo_path']);
     }
@@ -103,8 +103,8 @@ class BrandingTest extends TestCase
 
         $this->assertDatabaseHas('app_settings', ['key' => 'ampa_name', 'value' => 'AMPA Cortés de Aragón']);
         $this->assertDatabaseHas('app_settings', ['key' => 'school_name', 'value' => 'CEIP Cortés de Aragón']);
-        $this->assertDatabaseHas('app_settings', ['key' => 'primary_color', 'value' => '#4f46e5']);
-        $this->assertDatabaseHas('app_settings', ['key' => 'accent_color', 'value' => '#0f766e']);
+        $this->assertDatabaseHas('app_settings', ['key' => 'primary_color', 'value' => '#245b63']);
+        $this->assertDatabaseHas('app_settings', ['key' => 'accent_color', 'value' => '#4f7c70']);
     }
 
     public function test_seeder_is_idempotent(): void
@@ -118,11 +118,16 @@ class BrandingTest extends TestCase
     public function test_seeder_does_not_overwrite_existing_custom_values(): void
     {
         AppSetting::create(['key' => 'ampa_name', 'value' => 'Mi AMPA personalizado', 'type' => 'text']);
+        AppSetting::create(['key' => 'primary_color', 'value' => '#ff0000', 'type' => 'color']);
+        AppSetting::create(['key' => 'accent_color', 'value' => '#00ff00', 'type' => 'color']);
 
         $this->seed(AppSettingsSeeder::class);
 
-        // firstOrCreate: existing row must not be overwritten
+        // firstOrCreate: existing rows must not be overwritten, colors included —
+        // an AMPA that already customized its palette must not be reset to the project defaults.
         $this->assertDatabaseHas('app_settings', ['key' => 'ampa_name', 'value' => 'Mi AMPA personalizado']);
+        $this->assertDatabaseHas('app_settings', ['key' => 'primary_color', 'value' => '#ff0000']);
+        $this->assertDatabaseHas('app_settings', ['key' => 'accent_color', 'value' => '#00ff00']);
     }
 
     // ─── Admin page: access control ──────────────────────────────────────────

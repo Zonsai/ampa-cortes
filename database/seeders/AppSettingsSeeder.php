@@ -13,8 +13,8 @@ class AppSettingsSeeder extends Seeder
         $settings = [
             ['key' => 'ampa_name', 'value' => 'AMPA Cortés de Aragón', 'type' => 'text'],
             ['key' => 'school_name', 'value' => 'CEIP Cortés de Aragón', 'type' => 'text'],
-            ['key' => 'primary_color', 'value' => '#4f46e5', 'type' => 'color'],
-            ['key' => 'accent_color', 'value' => '#0f766e', 'type' => 'color'],
+            ['key' => 'primary_color', 'value' => '#245b63', 'type' => 'color'],
+            ['key' => 'accent_color', 'value' => '#4f7c70', 'type' => 'color'],
             ['key' => 'ampa_logo_path', 'value' => null, 'type' => 'image'],
             ['key' => 'school_logo_path', 'value' => null, 'type' => 'image'],
         ];

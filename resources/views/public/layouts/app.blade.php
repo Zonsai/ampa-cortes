@@ -7,8 +7,8 @@
     <meta name="description" content="@yield('meta_description', 'Web del AMPA del colegio. Extraescolares, anuncios, formularios y zona de familias.')">
     <style>
         :root {
-            --brand-primary: {{ $branding['primary_color'] ?? '#4f46e5' }};
-            --brand-accent: {{ $branding['accent_color'] ?? '#0f766e' }};
+            --brand-primary: {{ $branding['primary_color'] ?? '#245b63' }};
+            --brand-accent: {{ $branding['accent_color'] ?? '#4f7c70' }};
             --pub-bg: #ffffff;
             --pub-soft: #f6f7f9;
             --pub-border: #e5e7eb;

@@ -16,8 +16,8 @@ class AppSettings
     private static array $defaults = [
         'ampa_name' => 'AMPA Cortés de Aragón',
         'school_name' => 'CEIP Cortés de Aragón',
-        'primary_color' => '#4f46e5',
-        'accent_color' => '#0f766e',
+        'primary_color' => '#245b63',
+        'accent_color' => '#4f7c70',
         'ampa_logo_path' => null,
         'school_logo_path' => null,
     ];

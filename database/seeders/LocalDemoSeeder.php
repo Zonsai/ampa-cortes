@@ -73,8 +73,8 @@ class LocalDemoSeeder extends Seeder
     {
         AppSettings::set('ampa_name', 'AMPA Cortés de Aragón');
         AppSettings::set('school_name', 'CEIP Cortés de Aragón');
-        AppSettings::set('primary_color', '#4f46e5');
-        AppSettings::set('accent_color', '#0f766e');
+        AppSettings::set('primary_color', '#245b63');
+        AppSettings::set('accent_color', '#4f7c70');
     }
 
     // -------------------------------------------------------------------------

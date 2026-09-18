@@ -20,37 +20,37 @@
     @switch($field->type)
         @case(\App\Enums\FormFieldType::TextShort)
             <input type="text" name="{{ $inputName }}" value="{{ $currentValue }}"
-                   class="w-full rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                   class="w-full rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
             @break
 
         @case(\App\Enums\FormFieldType::TextLong)
             <textarea name="{{ $inputName }}" rows="4"
-                      class="w-full rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ $currentValue }}</textarea>
+                      class="w-full rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">{{ $currentValue }}</textarea>
             @break
 
         @case(\App\Enums\FormFieldType::Number)
             <input type="number" name="{{ $inputName }}" value="{{ $currentValue }}"
-                   class="w-48 rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                   class="w-48 rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
             @break
 
         @case(\App\Enums\FormFieldType::Date)
             <input type="date" name="{{ $inputName }}" value="{{ $currentValue }}"
-                   class="w-48 rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                   class="w-48 rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
             @break
 
         @case(\App\Enums\FormFieldType::Email)
             <input type="email" name="{{ $inputName }}" value="{{ $currentValue }}"
-                   class="w-full rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                   class="w-full rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
             @break
 
         @case(\App\Enums\FormFieldType::Phone)
             <input type="tel" name="{{ $inputName }}" value="{{ $currentValue }}"
-                   class="w-48 rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                   class="w-48 rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
             @break
 
         @case(\App\Enums\FormFieldType::Select)
             <select name="{{ $inputName }}"
-                    class="w-full rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    class="w-full rounded-lg border {{ $hasError ? 'border-red-400' : 'border-gray-300' }} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]">
                 <option value="">— Selecciona una opción —</option>
                 @foreach($field->options ?? [] as $option)
                     <option value="{{ $option }}" @selected($currentValue === $option)>{{ $option }}</option>
@@ -63,7 +63,7 @@
                 @foreach($field->options ?? [] as $option)
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="{{ $inputName }}" value="{{ $option }}"
-                               @checked($currentValue === $option) class="text-indigo-600">
+                               @checked($currentValue === $option) class="text-[var(--brand-primary)]">
                         <span class="text-sm text-gray-700">{{ $option }}</span>
                     </label>
                 @endforeach
@@ -75,7 +75,7 @@
             <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="{{ $inputName }}" value="1"
                        @checked($currentValue === '1' || $currentValue === 1 || $currentValue === true)
-                       class="text-indigo-600 rounded">
+                       class="text-[var(--brand-primary)] rounded">
                 <span class="text-sm text-gray-700">Sí</span>
             </label>
             @break
@@ -95,7 +95,7 @@
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" name="{{ $inputName }}[]" value="{{ $option }}"
                                @checked(in_array($option, $selectedOptions, true))
-                               class="text-indigo-600 rounded">
+                               class="text-[var(--brand-primary)] rounded">
                         <span class="text-sm text-gray-700">{{ $option }}</span>
                     </label>
                 @endforeach
@@ -107,13 +107,13 @@
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="{{ $inputName }}" value="1"
                            @checked($currentValue === '1' || $currentValue === 1 || $currentValue === true)
-                           class="text-indigo-600">
+                           class="text-[var(--brand-primary)]">
                     <span class="text-sm text-gray-700">Sí</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="{{ $inputName }}" value="0"
                            @checked($currentValue === '0' || $currentValue === 0)
-                           class="text-indigo-600">
+                           class="text-[var(--brand-primary)]">
                     <span class="text-sm text-gray-700">No</span>
                 </label>
             </div>
