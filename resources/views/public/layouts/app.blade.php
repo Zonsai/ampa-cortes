@@ -164,8 +164,8 @@
         .pub-ann-featured { display: block; background: var(--surface-warm, #faf8f4); border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 24px 26px; text-decoration: none; margin-bottom: 20px; }
         .pub-ann-featured:hover .pub-ann-featured__title { text-decoration: underline; }
         .pub-ann-featured__meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .pub-ann-featured__pin { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; color: var(--brand-warm, #d87552); text-transform: uppercase; letter-spacing: .04em; }
-        .pub-ann-featured__pin svg { width: 14px; height: 14px; }
+        .pub-ann-featured__pin { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; color: var(--brand-primary); text-transform: uppercase; letter-spacing: .04em; }
+        .pub-ann-featured__pin svg { width: 14px; height: 14px; color: var(--brand-warm); }
         .pub-ann-featured__date { font-size: .8rem; color: var(--pub-muted); }
         .pub-ann-featured__title { font-size: 1.25rem; font-weight: 700; margin: 0 0 6px; color: var(--pub-text); }
         .pub-ann-featured__summary { margin: 0; color: var(--pub-muted); }

@@ -5,8 +5,7 @@
 @php
     $famClass = match ($status) {
         \App\Enums\EnrollmentStatus::Enrolled, \App\Enums\EnrollmentStatus::Paid => 'status-success',
-        \App\Enums\EnrollmentStatus::Waitlist => 'status-warning',
-        \App\Enums\EnrollmentStatus::PendingPayment => 'status-info',
+        \App\Enums\EnrollmentStatus::Waitlist, \App\Enums\EnrollmentStatus::PendingPayment => 'status-warning',
         \App\Enums\EnrollmentStatus::Pending => 'status-pending',
         default => 'status-muted',
     };
