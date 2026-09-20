@@ -9,6 +9,8 @@
         :root {
             --brand-primary: {{ $branding['primary_color'] ?? '#245b63' }};
             --brand-accent: {{ $branding['accent_color'] ?? '#4f7c70' }};
+            --brand-warm: #d87552;
+            --surface-warm: #faf8f4;
             --pub-bg: #ffffff;
             --pub-soft: #f6f7f9;
             --pub-border: #e5e7eb;
@@ -29,8 +31,15 @@
         a { color: inherit; }
         .pub-container { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 
+        /* Focus (DESIGN.md §21) */
+        :focus-visible {
+            outline: 2px solid var(--brand-primary);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
         /* Header */
-        .pub-header { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--pub-border); }
+        .pub-header { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--pub-border); }
         .pub-header__bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; }
         .pub-brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; min-width: 0; }
         .pub-brand__logo { height: 38px; width: auto; object-fit: contain; flex-shrink: 0; }
@@ -42,7 +51,9 @@
         .pub-nav a { padding: 8px 12px; font-size: .92rem; font-weight: 500; color: var(--pub-muted); text-decoration: none; border-radius: 9px; }
         .pub-nav a:hover { color: var(--pub-text); background: var(--pub-soft); }
         .pub-nav a.is-active { color: var(--brand-primary); }
-        .pub-actions { display: flex; align-items: center; gap: 8px; }
+        .pub-actions { display: flex; align-items: center; gap: 14px; }
+        .pub-link-quiet { font-size: .88rem; font-weight: 600; color: var(--pub-muted); text-decoration: none; padding: 6px 2px; }
+        .pub-link-quiet:hover { color: var(--pub-text); text-decoration: underline; }
 
         /* Buttons */
         .pub-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: .92rem; font-weight: 600; padding: 10px 18px; border-radius: 11px; border: 1px solid transparent; text-decoration: none; cursor: pointer; transition: filter .15s, background .15s, border-color .15s; }
@@ -56,14 +67,19 @@
         .pub-burger { display: none; }
         @media (max-width: 860px) {
             .pub-nav, .pub-actions { display: none; }
-            .pub-burger { display: block; }
+            .pub-burger { display: inline-flex; }
             #pub-menu-toggle:checked ~ .pub-mobile { display: block; }
+            #pub-menu-toggle:checked ~ .pub-header__bar .pub-burger__icon--open { display: none; }
+            #pub-menu-toggle:checked ~ .pub-header__bar .pub-burger__icon--close { display: block; }
         }
         .pub-mobile { display: none; border-top: 1px solid var(--pub-border); padding: 10px 0 16px; }
-        .pub-mobile a { display: block; padding: 10px 6px; text-decoration: none; color: var(--pub-text); border-radius: 8px; }
+        .pub-mobile a { display: block; padding: 12px 6px; text-decoration: none; color: var(--pub-text); border-radius: 8px; font-weight: 500; }
         .pub-mobile a:hover { background: var(--pub-soft); }
-        .pub-mobile__actions { display: flex; gap: 8px; margin-top: 8px; }
-        label.pub-burger { cursor: pointer; font-size: 1.5rem; line-height: 1; padding: 6px 10px; border: 1px solid var(--pub-border); border-radius: 9px; background: #fff; }
+        .pub-mobile__actions { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--pub-border); }
+        .pub-mobile__secondary { text-align: center; }
+        label.pub-burger { cursor: pointer; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--pub-border); border-radius: 9px; background: #fff; color: var(--pub-text); }
+        label.pub-burger svg { width: 20px; height: 20px; }
+        .pub-burger__icon--close { display: none; }
         #pub-menu-toggle { display: none; }
 
         /* Sections */
@@ -79,16 +95,21 @@
         .pub-lead { font-size: 1.1rem; color: var(--pub-muted); }
 
         /* Hero */
-        .pub-hero { padding: 64px 0 44px; }
+        .pub-hero { padding: 56px 0 48px; }
         .pub-hero__grid { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: center; }
         @media (min-width: 860px) { .pub-hero__grid { grid-template-columns: 1.15fr .85fr; } }
         .pub-hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
         .pub-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--brand-primary) 10%, white); color: var(--brand-primary); }
-        .pub-hero__panel { background: linear-gradient(155deg, color-mix(in srgb, var(--brand-primary) 12%, white), color-mix(in srgb, var(--brand-accent) 10%, white)); border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 26px; }
-        .pub-hero__panel-label { display: block; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--brand-primary); margin-bottom: 14px; }
-        .pub-hero__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-        .pub-hero__list li { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: .95rem; background: #fff; border-radius: 11px; padding: 11px 13px; box-shadow: var(--pub-shadow); }
-        .pub-hero__list li span { font-size: 1.15rem; }
+
+        /* Hero — panel de identidad de comunidad (sin cifras/citas inventadas, ver DESIGN.md §26) */
+        .pub-hero__community { background: var(--surface-warm, #faf8f4); border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 28px; }
+        .pub-hero__community-icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: color-mix(in srgb, var(--brand-warm, #d87552) 16%, white); color: var(--brand-warm, #d87552); margin-bottom: 16px; }
+        .pub-hero__community-icon svg { width: 22px; height: 22px; }
+        .pub-hero__community-label { display: block; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--brand-primary); margin-bottom: 10px; }
+        .pub-hero__community-text { font-size: 1.05rem; font-weight: 600; color: var(--pub-text); margin: 0 0 18px; line-height: 1.45; }
+        .pub-hero__community-list { list-style: none; margin: 0; padding: 14px 0 0; display: grid; gap: 10px; border-top: 1px solid var(--pub-border); }
+        .pub-hero__community-list li { display: flex; align-items: center; gap: 9px; font-size: .88rem; font-weight: 500; color: var(--pub-muted); }
+        .pub-hero__community-list svg { width: 16px; height: 16px; color: var(--brand-primary); flex-shrink: 0; }
 
         /* Cards grid */
         .pub-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
@@ -101,6 +122,35 @@
         .pub-card p { color: var(--pub-muted); margin: 0; }
         .pub-card--quiet { background: var(--pub-soft); box-shadow: none; }
 
+        /* Qué ofrecemos — bloque destacado + filas compactas (Home) */
+        .pub-offer { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 860px) { .pub-offer { grid-template-columns: 1.1fr .9fr; align-items: stretch; } }
+        .pub-offer__featured { background: #fff; border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 28px; box-shadow: var(--pub-shadow); }
+        .pub-offer__featured-icon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 12px; background: color-mix(in srgb, var(--brand-primary) 12%, white); color: var(--brand-primary); margin-bottom: 16px; }
+        .pub-offer__featured-icon svg { width: 24px; height: 24px; }
+        .pub-offer__featured p { color: var(--pub-muted); }
+        .pub-offer__list { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--pub-border); border-radius: var(--pub-radius); box-shadow: var(--pub-shadow); overflow: hidden; }
+        .pub-offer__row { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; }
+        .pub-offer__row + .pub-offer__row { border-top: 1px solid var(--pub-border); }
+        .pub-offer__row-icon { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--brand-accent) 14%, white); color: var(--brand-accent); }
+        .pub-offer__row-icon svg { width: 18px; height: 18px; }
+        .pub-offer__row h3 { font-size: .98rem; margin: 0 0 3px; }
+        .pub-offer__row p { margin: 0; font-size: .88rem; color: var(--pub-muted); }
+
+        /* El AMPA — teaser editorial (Home) */
+        .pub-about-teaser__grid { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: center; }
+        @media (min-width: 860px) { .pub-about-teaser__grid { grid-template-columns: .85fr 1.15fr; } }
+        .pub-about-teaser__photo { aspect-ratio: 4 / 3; border: 1px dashed var(--pub-border); border-radius: var(--pub-radius); background: var(--pub-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--pub-muted); text-align: center; padding: 20px; }
+        .pub-about-teaser__photo svg { width: 30px; height: 30px; }
+        .pub-about-teaser__photo span { font-size: .8rem; max-width: 220px; }
+        .pub-about-teaser__icon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: color-mix(in srgb, var(--brand-primary) 12%, white); color: var(--brand-primary); margin-bottom: 16px; }
+        .pub-about-teaser__icon svg { width: 22px; height: 22px; }
+        .pub-about-teaser p { color: var(--pub-muted); font-size: 1.02rem; }
+
+        /* Enlace con flecha — reutilizado en "Qué ofrecemos" y "El AMPA" (Home) */
+        .pub-link-arrow { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--brand-primary); text-decoration: none; margin-top: 4px; }
+        .pub-link-arrow:hover { text-decoration: underline; }
+
         /* Announcement list */
         .pub-ann { display: block; background: #fff; border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 20px 22px; box-shadow: var(--pub-shadow); text-decoration: none; transition: border-color .15s, box-shadow .15s; }
         .pub-ann:hover { border-color: color-mix(in srgb, var(--brand-primary) 40%, var(--pub-border)); }
@@ -109,6 +159,22 @@
         .pub-ann__title { font-size: 1.15rem; font-weight: 700; margin: 0 0 6px; }
         .pub-ann__summary { color: var(--pub-muted); margin: 0; }
         .pub-pin { font-size: .72rem; font-weight: 700; color: var(--brand-accent); background: color-mix(in srgb, var(--brand-accent) 12%, white); padding: 3px 9px; border-radius: 999px; }
+
+        /* Anuncios — destacado + filas editoriales compactas (Home) */
+        .pub-ann-featured { display: block; background: var(--surface-warm, #faf8f4); border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 24px 26px; text-decoration: none; margin-bottom: 20px; }
+        .pub-ann-featured:hover .pub-ann-featured__title { text-decoration: underline; }
+        .pub-ann-featured__meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .pub-ann-featured__pin { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; color: var(--brand-warm, #d87552); text-transform: uppercase; letter-spacing: .04em; }
+        .pub-ann-featured__pin svg { width: 14px; height: 14px; }
+        .pub-ann-featured__date { font-size: .8rem; color: var(--pub-muted); }
+        .pub-ann-featured__title { font-size: 1.25rem; font-weight: 700; margin: 0 0 6px; color: var(--pub-text); }
+        .pub-ann-featured__summary { margin: 0; color: var(--pub-muted); }
+        .pub-ann-rows { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--pub-border); border-radius: var(--pub-radius); overflow: hidden; }
+        .pub-ann-row { display: flex; align-items: baseline; gap: 14px; padding: 16px 20px; text-decoration: none; color: inherit; }
+        .pub-ann-row + .pub-ann-row { border-top: 1px solid var(--pub-border); }
+        .pub-ann-row:hover .pub-ann-row__title { text-decoration: underline; }
+        .pub-ann-row__date { flex: 0 0 auto; font-size: .78rem; color: var(--pub-muted); min-width: 9ch; }
+        .pub-ann-row__title { font-weight: 600; font-size: .96rem; }
 
         /* Article */
         .pub-article { max-width: 760px; }
@@ -132,9 +198,14 @@
         .pub-cta p { color: rgba(255,255,255,.85); }
         .pub-cta .pub-btn--ghost { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); }
         .pub-cta .pub-btn--primary { background: #fff; color: var(--brand-primary); }
+        .pub-cta--flat { background: var(--surface-warm, #faf8f4); color: var(--pub-text); box-shadow: none; border: 1px solid var(--pub-border); }
+        .pub-cta--flat h2 { color: var(--pub-text); }
+        .pub-cta--flat p { color: var(--pub-muted); }
+        .pub-cta--flat .pub-link-quiet { color: var(--pub-muted); }
+        .pub-cta--flat .pub-btn--primary { background: var(--brand-primary); color: #fff; }
 
         /* Footer */
-        .pub-footer { border-top: 1px solid var(--pub-border); background: var(--pub-soft); padding: 36px 0; margin-top: 24px; }
+        .pub-footer { border-top: 1px solid var(--pub-border); border-bottom: 3px solid var(--brand-warm, #d87552); background: var(--pub-soft); padding: 36px 0; margin-top: 24px; }
         .pub-footer__grid { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; }
         .pub-footer__links { display: flex; flex-wrap: wrap; gap: 16px; }
         .pub-footer__links a { color: var(--pub-muted); text-decoration: none; font-size: .9rem; }
@@ -176,11 +247,14 @@
                 </nav>
 
                 <div class="pub-actions">
-                    <a href="{{ url('/familia/login') }}" class="pub-btn pub-btn--ghost pub-btn--sm">Acceso familias</a>
-                    <a href="{{ url('/admin') }}" class="pub-btn pub-btn--primary pub-btn--sm">Gestión AMPA</a>
+                    <a href="{{ url('/admin') }}" class="pub-link-quiet">Gestión AMPA</a>
+                    <a href="{{ url('/familia/login') }}" class="pub-btn pub-btn--primary pub-btn--sm">Acceso familias</a>
                 </div>
 
-                <label for="pub-menu-toggle" class="pub-burger" aria-label="Abrir menú">☰</label>
+                <label for="pub-menu-toggle" class="pub-burger" aria-label="Abrir menú">
+                    <svg class="pub-burger__icon--open" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    <svg class="pub-burger__icon--close" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                </label>
             </div>
 
             <div class="pub-mobile">
@@ -190,8 +264,8 @@
                 <a href="{{ route('public.announcements.index') }}">Anuncios</a>
                 <a href="{{ route('public.contact') }}">Contacto</a>
                 <div class="pub-mobile__actions">
-                    <a href="{{ url('/familia/login') }}" class="pub-btn pub-btn--ghost pub-btn--sm">Acceso familias</a>
-                    <a href="{{ url('/admin') }}" class="pub-btn pub-btn--primary pub-btn--sm">Gestión AMPA</a>
+                    <a href="{{ url('/familia/login') }}" class="pub-btn pub-btn--primary pub-btn--sm">Acceso familias</a>
+                    <a href="{{ url('/admin') }}" class="pub-link-quiet pub-mobile__secondary">Gestión AMPA</a>
                 </div>
             </div>
         </div>
