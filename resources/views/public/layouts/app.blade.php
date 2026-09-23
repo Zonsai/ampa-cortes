@@ -50,7 +50,7 @@
         .pub-nav { display: flex; align-items: center; gap: 4px; }
         .pub-nav a { padding: 8px 12px; font-size: .92rem; font-weight: 500; color: var(--pub-muted); text-decoration: none; border-radius: 9px; }
         .pub-nav a:hover { color: var(--pub-text); background: var(--pub-soft); }
-        .pub-nav a.is-active { color: var(--brand-primary); }
+        .pub-nav a.is-active { color: var(--brand-primary); font-weight: 700; }
         .pub-actions { display: flex; align-items: center; gap: 14px; }
         .pub-link-quiet { font-size: .88rem; font-weight: 600; color: var(--pub-muted); text-decoration: none; padding: 6px 2px; }
         .pub-link-quiet:hover { color: var(--pub-text); text-decoration: underline; }
@@ -75,12 +75,31 @@
         .pub-mobile { display: none; border-top: 1px solid var(--pub-border); padding: 10px 0 16px; }
         .pub-mobile a { display: block; padding: 12px 6px; text-decoration: none; color: var(--pub-text); border-radius: 8px; font-weight: 500; }
         .pub-mobile a:hover { background: var(--pub-soft); }
+        .pub-mobile a.is-active { color: var(--brand-primary); font-weight: 700; background: var(--pub-soft); }
         .pub-mobile__actions { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--pub-border); }
         .pub-mobile__secondary { text-align: center; }
         label.pub-burger { cursor: pointer; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--pub-border); border-radius: 9px; background: #fff; color: var(--pub-text); }
         label.pub-burger svg { width: 20px; height: 20px; }
         .pub-burger__icon--close { display: none; }
         #pub-menu-toggle { display: none; }
+        @media (max-width: 860px) {
+            /* Visualmente oculto pero enfocable por teclado (mismo patrón que .fam-sr-only) */
+            #pub-menu-toggle {
+                display: block;
+                position: absolute;
+                width: 1px; height: 1px;
+                margin: -1px; padding: 0;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+            #pub-menu-toggle:focus-visible ~ .pub-header__bar .pub-burger {
+                outline: 2px solid var(--brand-primary);
+                outline-offset: 2px;
+                border-radius: 9px;
+            }
+        }
 
         /* Sections */
         main { display: block; }
@@ -119,6 +138,7 @@
         .pub-grid--ann { grid-template-columns: repeat(auto-fit, minmax(280px, 360px)); justify-content: start; }
         .pub-card { background: #fff; border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 22px; box-shadow: var(--pub-shadow); }
         .pub-card__icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 11px; background: color-mix(in srgb, var(--brand-primary) 12%, white); color: var(--brand-primary); font-size: 1.2rem; margin-bottom: 12px; }
+        .pub-card__icon svg { width: 20px; height: 20px; }
         .pub-card p { color: var(--pub-muted); margin: 0; }
         .pub-card--quiet { background: var(--pub-soft); box-shadow: none; }
 
@@ -158,7 +178,8 @@
         .pub-ann__date { font-size: .8rem; color: var(--pub-muted); }
         .pub-ann__title { font-size: 1.15rem; font-weight: 700; margin: 0 0 6px; }
         .pub-ann__summary { color: var(--pub-muted); margin: 0; }
-        .pub-pin { font-size: .72rem; font-weight: 700; color: var(--brand-accent); background: color-mix(in srgb, var(--brand-accent) 12%, white); padding: 3px 9px; border-radius: 999px; }
+        .pub-pin { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; color: var(--brand-accent); background: color-mix(in srgb, var(--brand-accent) 12%, white); padding: 3px 9px; border-radius: 999px; }
+        .pub-pin svg { width: 12px; height: 12px; flex: 0 0 auto; }
 
         /* Anuncios — destacado + filas editoriales compactas (Home) */
         .pub-ann-featured { display: block; background: var(--surface-warm, #faf8f4); border: 1px solid var(--pub-border); border-radius: var(--pub-radius); padding: 24px 26px; text-decoration: none; margin-bottom: 20px; }
@@ -203,6 +224,8 @@
         .pub-cta--flat p { color: var(--pub-muted); }
         .pub-cta--flat .pub-link-quiet { color: var(--pub-muted); }
         .pub-cta--flat .pub-btn--primary { background: var(--brand-primary); color: #fff; }
+        .pub-cta--flat .pub-btn--ghost { background: #fff; color: var(--pub-text); border-color: var(--pub-border); }
+        .pub-cta--flat .pub-btn--ghost:hover { border-color: #cbd5e1; background: var(--pub-soft); }
 
         /* Footer */
         .pub-footer { border-top: 1px solid var(--pub-border); border-bottom: 3px solid var(--brand-warm, #d87552); background: var(--pub-soft); padding: 36px 0; margin-top: 24px; }
@@ -258,11 +281,11 @@
             </div>
 
             <div class="pub-mobile">
-                <a href="{{ route('public.home') }}">Inicio</a>
-                <a href="{{ route('public.about') }}">El AMPA</a>
-                <a href="{{ route('public.extracurriculars') }}">Extraescolares</a>
-                <a href="{{ route('public.announcements.index') }}">Anuncios</a>
-                <a href="{{ route('public.contact') }}">Contacto</a>
+                <a href="{{ route('public.home') }}" @class(['is-active' => request()->routeIs('public.home')])>Inicio</a>
+                <a href="{{ route('public.about') }}" @class(['is-active' => request()->routeIs('public.about')])>El AMPA</a>
+                <a href="{{ route('public.extracurriculars') }}" @class(['is-active' => request()->routeIs('public.extracurriculars')])>Extraescolares</a>
+                <a href="{{ route('public.announcements.index') }}" @class(['is-active' => request()->routeIs('public.announcements.*')])>Anuncios</a>
+                <a href="{{ route('public.contact') }}" @class(['is-active' => request()->routeIs('public.contact')])>Contacto</a>
                 <div class="pub-mobile__actions">
                     <a href="{{ url('/familia/login') }}" class="pub-btn pub-btn--primary pub-btn--sm">Acceso familias</a>
                     <a href="{{ url('/admin') }}" class="pub-link-quiet pub-mobile__secondary">Gestión AMPA</a>

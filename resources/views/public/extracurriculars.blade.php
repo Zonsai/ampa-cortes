@@ -16,7 +16,9 @@
             <div class="pub-grid pub-grid--cards">
                 @foreach($activities as $activity)
                     <div class="pub-card">
-                        <div class="pub-card__icon">🎯</div>
+                        <div class="pub-card__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 13.5L6 20l6-2.5L18 20l-3-6.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 6v5M9.8 8.5h4.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                        </div>
                         <h3>{{ $activity->name }}</h3>
                         @if($activity->short_description)
                             <p>{{ \Illuminate\Support\Str::limit($activity->short_description, 130) }}</p>
@@ -34,7 +36,7 @@
         @endif
 
         <div style="margin-top:32px;">
-            <div class="pub-cta">
+            <div class="pub-cta pub-cta--flat">
                 <h2>¿Quieres inscribir a tu hijo/a?</h2>
                 <p>La inscripción en extraescolares se realiza desde la zona privada de familias.</p>
                 <a href="{{ url('/familia/login') }}" class="pub-btn pub-btn--primary" style="margin-top:8px;">Acceso familias</a>
