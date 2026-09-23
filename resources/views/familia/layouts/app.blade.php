@@ -24,6 +24,15 @@
 
         * { box-sizing: border-box; }
 
+        /* Focus (DESIGN.md §21) — visible en todo elemento interactivo de la zona familiar */
+        :focus-visible {
+            outline: 2px solid var(--brand-primary);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        input[type="checkbox"], input[type="radio"] { accent-color: var(--brand-primary); }
+
         body.family-body {
             margin: 0;
             min-height: 100vh;
@@ -41,7 +50,6 @@
         .family-header__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
         .family-brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: inherit; border-radius: var(--fam-radius-sm); padding: 4px 6px; margin: -4px -6px; transition: background .15s; }
         .family-brand:hover { background: #f4f5f7; }
-        .family-brand:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
         .family-brand__logo { height: 34px; width: auto; object-fit: contain; }
         .family-brand__badge { display: inline-flex; align-items: center; justify-content: center; height: 34px; width: 34px; border-radius: 50%; background: var(--brand-primary); color: #fff; font-weight: 700; font-size: .72rem; flex: 0 0 auto; }
         .family-brand__text { min-width: 0; }
@@ -93,7 +101,6 @@
         .family-section__title { font-size: 1rem; font-weight: 600; margin: 0 0 12px; }
 
         /* Dashboard (/familia) */
-        .family-dash a:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; border-radius: 6px; }
         .fam-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
         .family-dash-head { margin-bottom: 24px; }
@@ -449,14 +456,6 @@
         .family-cal-tt-session__loc { color: #4b5563; }
         .family-cal-tt-session.is-modified .family-cal-tt-session__who-text { white-space: normal; }
         .family-cal-tt-session__student-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
-
-        /* Accesibilidad de esta pantalla únicamente (DESIGN.md §21) — no se aplica todavía al resto de la app */
-        .family-cal-page a:focus-visible,
-        .family-cal-page button:focus-visible {
-            outline: 2px solid var(--brand-primary);
-            outline-offset: 2px;
-            border-radius: 4px;
-        }
     </style>
     @if(!app()->environment('testing'))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
