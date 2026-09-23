@@ -290,11 +290,13 @@ Se define un anillo de foco único para todo el proyecto, visible con teclado (`
 }
 ```
 
-Esto reutiliza literalmente el halo que ya existe en `.family-input:focus` pero lo extiende a enlaces, botones y chips, que hoy no tienen indicador de foco propio.
+Esto reutiliza literalmente el halo que ya existe en `.family-input:focus` pero lo extiende a enlaces, botones y chips.
+
+**Implementado.** Ambos layouts (`public/layouts/app.blade.php`, `familia/layouts/app.blade.php`) declaran esta regla como `:focus-visible` global, no solo en campos de formulario. En familias sustituyó reglas equivalentes que antes estaban repetidas por componente (`.family-brand`, `.family-dash a`, `.family-cal-page`); se conserva únicamente el override real de `.family-quick__link` (offset negativo, evita que el anillo se recorte contra el borde del panel).
 
 ## 22. Iconografía
 
-**Situación actual:** el front público usa **emoji como iconos estructurales** (🎨 📝 ✅ 📣 en `home.blade.php`, ☰ como icono de menú). Es el hallazgo de diseño más claro de esta revisión: los emoji son dependientes de la fuente del sistema operativo, no se pueden themar, cambian de aspecto entre Windows/Mac/Android y son la señal más reconocible de "interfaz genérica/generada". La zona familiar ya hace lo correcto en algunos puntos (icono SVG inline en `.family-pending-item__icon`).
+**Implementado.** El front público ya no usa emoji como icono estructural en ninguna vista (`home`, `about`, `extracurriculars`, `contact`, `announcements/*`) — todos sustituidos por SVG inline lineal, reutilizando el mismo trazado entre Home y el resto de páginas cuando representan el mismo concepto (extraescolares, formularios, consentimientos, comunicación, "destacado"). El menú móvil (`☰`) ya usaba SVG. La zona familiar ya lo hacía correctamente desde antes (icono SVG inline en `.family-pending-item__icon`, etc.).
 
 **Regla:** iconos SVG en línea (inline `<svg>`, sin librería npm — coherente con "sin dependencias nuevas"), trazo lineal (`stroke`, no relleno sólido saturado), grosor de trazo consistente (1.5–2px), tamaño en pasos fijos (16/20/24px). Referencia de estilo si se necesita elegir trazado nuevo: familia visual tipo Phosphor/Heroicons *outline* — se copia el `<path>` a mano en el Blade, no se instala el paquete.
 
@@ -310,15 +312,15 @@ Esto reutiliza literalmente el halo que ya existe en `.family-input:focus` pero 
 - Paleta de 6 colores fija por hijo/a — **ver §3.5, ya no violeta**.
 - Cubierto por 19 tests en `tests/Feature/FamilyCalendarTest.php` (acceso, filtros, navegación, excepciones, timetable: posición/duración/lanes/límites).
 
-### 23.2 Refinamiento visual pendiente (documentado, no implementado — fuera de esta fase)
+### 23.2 Refinamiento visual — implementado
 
-Diagnóstico tras revisar el timetable ya construido: es funcionalmente correcto, pero visualmente puede mejorar en tres puntos concretos, ninguno de los cuales toca `ScheduledSessionCalculator` ni la lógica de solapamiento ya resuelta:
+Los tres puntos diagnosticados sobre el timetable ya construido quedaron implementados en `feature/visual-refresh` (commit `feat(familia): refinar la lectura del calendario semanal`), sin tocar `ScheduledSessionCalculator` ni la lógica de solapamiento:
 
-1. **Contenedor propio, más ancho.** El calendario hoy hereda `.family-container` (1040px), igual que el resto de la zona familiar. Con un contenedor dedicado (~1400px) el timetable deja de sentirse estrecho y los solapamientos de 2 lanes ganan legibilidad sin necesitar más cambios.
-2. **Información mínima por sesión.** Hoy cada tarjeta de sesión siempre muestra hora + actividad + grupo + ubicación + alumno/a. Se propone reducir a hora + actividad + hijo/a (punto de color + nombre) siempre visibles; ubicación solo si cabe en una línea; **el nombre del grupo se omite salvo que dos grupos de la misma actividad convivan esa semana** (hoy siempre se muestra, redundante en la mayoría de los casos).
-3. **Política de solapamientos con 3+ lanes.** El algoritmo de lanes ya soporta cualquier número de solapes simultáneos, pero visualmente no se ha decidido qué hacer a partir de 3 sesiones a la misma hora en un contenedor de ancho normal (columnas demasiado estrechas). Con el contenedor ancho de (1) es un caso raro; si aparece, la opción a explorar es limitar a 2 lanes visibles + indicador "+N", a decidir en la fase de implementación.
+1. **Contenedor propio, más ancho.** `.family-cal-page` usa `width: min(1360px, 100vw − 48px)` desde 1100px de viewport, centrado de forma independiente de `.family-container` (que no cambia). Por debajo de 1100px usa el ancho normal de la zona familiar.
+2. **Información mínima por sesión.** Cada tarjeta muestra hora + actividad + hijo/a (punto de color + nombre) + ubicación cuando cabe. El nombre del grupo (`CalendarController::$groupNameActivityIds`, dato de presentación calculado por semana/filtro de hijo/a visible) solo se muestra cuando dos grupos de la misma actividad conviven en la vista actual — cubierto por 3 tests dedicados en `FamilyCalendarTest.php`.
+3. **Política de solapamientos con 3+ lanes.** Sin cambios en el algoritmo; con el contenedor ancho de (1) el caso de 3+ lanes simultáneos sigue siendo raro y legible. El indicador "+N" queda sin implementar — no hizo falta con los datos reales manejados.
 
-Estos tres puntos se abordan en su propia fase (ver §25), en su propia rama, después de fusionar `feature/family-calendar`.
+Además, en la misma pasada: eje horario realineado con la cabecera de cada día (bug de desfase corregido), días sin sesiones sin "Sin sesiones" visible en desktop (texto solo para lectores de pantalla, columna igualmente presente), cambio puntual mostrado inline junto a la hora en vez de una pastilla inferior, y cabecera/filtros/avisos recompuestos en una sola fila compacta.
 
 ## 24. Reglas Do / Don't
 
@@ -347,24 +349,25 @@ Estos tres puntos se abordan en su propia fase (ver §25), en su propia rama, de
 
 ## 25. Fases de aplicación recomendadas
 
-Ninguna de estas fases está implementada todavía. Se listan en orden de riesgo creciente para poder aplicarlas de forma incremental sin romper funcionalidad ni tests existentes.
+Se listan en orden de riesgo creciente para poder aplicarlas de forma incremental sin romper funcionalidad ni tests existentes. La mayoría ya está implementada (ver marca ✅ en cada una); quedan pendientes únicamente las fases 0 y 4.
 
-1. **Fase 0 — Extraer tokens compartidos.** Crear `resources/views/partials/design-tokens.blade.php` (o equivalente) con las variables de §3.3–3.4 y `@include` en ambos `<style>` de layout. Cero cambio visual: mismos valores, una sola fuente. Riesgo mínimo, sin tests que romper (no hay aserciones sobre CSS).
-2. **Fase 1 — Foco visible.** Añadir la regla `:focus-visible` de §21 a ambos layouts. Cero cambio de layout/estructura, solo accesibilidad. Riesgo mínimo.
-3. **Fase 2 — Iconografía del front público.** Sustituir los emoji de `public/home.blade.php` (y cualquier otro que aparezca en `about`/`extracurriculars`/`contact`) por SVG inline lineales. Cambia el marcado, no el texto ni las rutas — verificar con los tests de `HomepageTest.php` que siguen buscando el texto visible, no el emoji.
-4. **Fase 3 — Simplificar degradados y `backdrop-filter`.** Retirar el `backdrop-filter: blur()` del `.pub-header` y reducir a un único degradado en la página pública (el del CTA). Cambio puramente visual en el layout público, sin tocar rutas ni controladores.
-5. **Fase 4 — Unificar radios y anchos máximos.** Converger `--pub-radius`/`--fam-radius` a 14px y los contenedores a 1080px. Revisar visualmente ambas zonas tras el cambio (no hay aserciones de píxeles en los tests).
-6. **Fase 5 — Timetable del calendario (§23.1). ✅ Completada.** Eje horario compartido, posición/duración proporcional y solapamientos por lanes implementados en `CalendarController`/`familia/calendar/index.blade.php`, con 19 tests en `FamilyCalendarTest.php`. Pendiente de fusionar `feature/family-calendar` a `main`.
-7. **Fase 6 — Identidad definitiva (petróleo + terracota).** ✅ Completada en esta misma actualización: valores por defecto de `AppSettings`/`AppSettingsSeeder`/`LocalDemoSeeder`, fallbacks de ambos layouts y paleta de hijos/as del calendario. Pendiente: el resto de fases de este documento (0–4, 8–9) siguen sin aplicar sobre el nuevo color.
-8. **Fase 7 — Refinamiento visual del calendario (§23.2).** Contenedor propio más ancho + jerarquía mínima de información por sesión. Toca `CalendarController` (qué campos expone) y `familia/calendar/index.blade.php`; requiere ampliar `FamilyCalendarTest.php`. En su propia rama, después de fusionar `feature/family-calendar`.
-9. **Fase 8 — Recomposición del Home (§26).** Hero asimétrico, sección "Qué ofrecemos" editorial, nueva sección "Quiénes somos", anuncios con jerarquía. Solo `public/home.blade.php` y el layout público.
-10. **Fase 9 — Refinamiento del dashboard familiar (§27).** Iconos por categoría, accesos rápidos con icono, ajustes de densidad. Solo Blade/CSS, sin tocar el controlador.
+1. **Fase 0 — Extraer tokens compartidos.** Crear `resources/views/partials/design-tokens.blade.php` (o equivalente) con las variables de §3.3–3.4 y `@include` en ambos `<style>` de layout. Cero cambio visual: mismos valores, una sola fuente. **No implementada** — cada layout sigue declarando sus propios tokens en su `<style>`; riesgo mínimo, sin tests que romper, pendiente si se quiere abordar.
+2. **Fase 1 — Foco visible. ✅ Completada.** Regla `:focus-visible` de §21 global en ambos layouts.
+3. **Fase 2 — Iconografía del front público. ✅ Completada.** Ver §22 — cero emoji estructurales en `public/`.
+4. **Fase 3 — Simplificar degradados y `backdrop-filter`. ✅ Completada.** `.pub-header` nunca tuvo `backdrop-filter` en el CSS real (solo `background: rgba(255,255,255,.96)`). Todos los CTA del front público (`home`, `about`, `extracurriculars`, `contact`) usan ahora `.pub-cta--flat`, sin degradado; la variante con degradado (`.pub-cta` base) queda declarada pero sin ningún uso activo — se conserva como variante disponible, no se ha borrado del CSS.
+5. **Fase 4 — Unificar radios y anchos máximos.** **No implementada** — `--pub-radius` (16px) y `--fam-radius` (14px) y los contenedores (1080px/1040px) siguen sin converger. Pendiente si se quiere abordar; no es una inconsistencia visible para el usuario final (§6).
+6. **Fase 5 — Timetable del calendario (§23.1). ✅ Completada.** Eje horario compartido, posición/duración proporcional y solapamientos por lanes implementados en `CalendarController`/`familia/calendar/index.blade.php`, con tests en `FamilyCalendarTest.php`.
+7. **Fase 6 — Identidad definitiva (petróleo + terracota). ✅ Completada.** Valores por defecto de `AppSettings`/`AppSettingsSeeder`/`LocalDemoSeeder`, fallbacks de ambos layouts y paleta de hijos/as del calendario.
+8. **Fase 7 — Refinamiento visual del calendario (§23.2). ✅ Completada.** Ver §23.2.
+9. **Fase 8 — Recomposición del Home (§26). ✅ Completada.** Ver §26.
+10. **Fase 9 — Refinamiento del dashboard familiar (§27). ✅ Completada.** Ver §27.
+11. **Fase 10 — Coherencia visual del resto del front público y de los formularios familiares (no numerada originalmente, añadida tras la pasada de coherencia general). ✅ Completada.** `about`/`extracurriculars`/`contact`/`announcements` alineados al lenguaje visual de Home (SVG, CTA plano, navegación activa no solo por color, menú móvil accesible por teclado); `familia/forms/partials/field.blade.php` migrado del sistema de utilidades Tailwind (paralelo, no documentado aquí) al sistema `family-*` ya usado en el resto de la zona familiar.
 
-Cada fase es un commit/rama independiente y pequeña, siguiendo la convención ya establecida en el proyecto (`docs/PROJECT_STATE.md` §7: "mantener fases pequeñas y testeadas"). **Ninguna de las fases 7–9 está implementada todavía** — quedan documentadas como dirección aprobada, pendientes de ejecución explícita.
+Cada fase es un commit/rama independiente y pequeña, siguiendo la convención ya establecida en el proyecto (`docs/PROJECT_STATE.md` §7: "mantener fases pequeñas y testeadas"). Quedan sin implementar únicamente las fases 0 y 4 (extracción de tokens compartidos y unificación de radios/anchos máximos) — ambas de bajo riesgo visual, pendientes de decisión explícita para abordarlas.
 
-## 26. Home pública — dirección aprobada (documentada, no implementada)
+## 26. Home pública — implementada
 
-Diagnóstico: la Home actual es correcta pero demasiado parecida a una landing SaaS (hero + 4 tarjetas idénticas + tablón + CTA con degradado). Dirección aprobada, a aplicar en la Fase 8:
+Diagnóstico original: la Home era correcta pero demasiado parecida a una landing SaaS (hero + 4 tarjetas idénticas + tablón + CTA con degradado). Dirección aplicada en la Fase 8 (`resources/views/public/home.blade.php` + layout público), verificada con `HomepageTest.php` y QA visual a 375/768/1280px:
 
 - **Header**: un único CTA primario ("Acceso familias"); "Gestión AMPA" baja a enlace de texto — hoy hay dos botones `--primary` compitiendo (header + hero), viola la regla de §10 ("un único botón primario por pantalla").
 - **Hero asimétrico**: titular con más contraste tipográfico (más grande, más peso, sin cambiar de fuente — ver §4). El panel lateral deja de ser un checklist de emoji sobre degradado y pasa a un módulo de "prueba de comunidad": cifras reales del curso (marcadas `[Nº]` hasta tener el dato) + una cita real de una familia o de la junta (placeholder explícito hasta recopilarla, nunca inventada).
@@ -374,14 +377,20 @@ Diagnóstico: la Home actual es correcta pero demasiado parecida a una landing S
 - **CTA final**: un solo panel de color plano cálido (`--surface-warm`), sin degradado; un único botón, el resto como enlace de texto.
 - **Iconografía**: sustituir los emoji por los SVG lineales de §22, coloreados con propósito (`--brand-primary` / `--brand-secondary` / `--brand-warm` según el caso, nunca los cuatro iguales).
 
-## 27. Familias — refinamientos aprobados (documentados, no implementados)
+## 27. Familias — implementado
 
-Sin reconstrucción — la jerarquía y la lógica de "Pendiente de ti" ya son correctas. Refinamientos aprobados, a aplicar en la Fase 9:
+Sin reconstrucción — la jerarquía y la lógica de "Pendiente de ti" ya eran correctas. Refinamientos aplicados en la Fase 9 (`resources/views/familia/dashboard.blade.php` + layout familiar):
 
-- **Iconos de "Pendiente de ti" con color por categoría** en vez de un único tono indigo/petróleo para los 5 tipos: mapeados a los tokens ya definidos (`--brand-primary` para consentimientos, `--color-neutral` para formularios, `--color-warning` para pago pendiente, `--color-info` para solicitudes) — mejora el escaneo visual sin inventar colores nuevos ni volverse multicolor.
-- **Accesos rápidos con icono**, igual que "Pendiente de ti" — hoy son solo texto + flecha, inconsistente con el resto de la iconografía SVG ya presente en la pantalla.
-- **Stats**: la tarjeta con dato relevante gana peso tipográfico; las que están en 0 bajan visualmente (gris), para que la jerarquía la dé el contenido, no la posición.
-- Todo lo demás se conserva tal cual: `.family-container`, estructura de secciones, tabla de inscripciones, empty states, badges de estado.
+- **Iconos de "Pendiente de ti" con color por categoría** en vez de un único tono para los distintos tipos, mapeados a los tokens ya definidos.
+- **Accesos rápidos con icono**, igual que "Pendiente de ti".
+- **Stats**: la tarjeta con dato relevante gana peso tipográfico; las que están en 0 bajan visualmente (gris).
+- Se conserva `.family-container`, estructura de secciones, tabla de inscripciones (convertida a lista de filas responsive), empty states, badges de estado.
+
+**Además, tras el Dashboard** (fuera de la Fase 9 original, en la pasada de coherencia general):
+
+- **Calendario semanal** (`/familia/calendario`) refinado — ver §23.2.
+- **Formularios** (`familia/forms/partials/field.blade.php`): el partial que renderiza cada campo (texto, select, radio, checkbox, checkboxes, sí/no, texto informativo) usaba un sistema de utilidades Tailwind ajeno al resto del proyecto, sin foco visible propio ni tokens de marca. Migrado a `.family-input`/`.family-label`/`.family-check`/`.family-field-error`/`.family-alert--info`, sin cambios de `name`, validación ni semántica.
+- **Foco visible y `accent-color`**: `:focus-visible` global en toda la zona familiar (antes solo cubría marca/dashboard/calendario — ver §21) y `accent-color: var(--brand-primary)` en checkboxes/radios de toda la zona.
 
 ---
 
