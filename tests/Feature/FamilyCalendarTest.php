@@ -445,6 +445,78 @@ class FamilyCalendarTest extends TestCase
         $this->assertTimetableAttribute($content, "Actividad Solapada B-{$child2->full_name}", 'lane', '1');
     }
 
+    // ── 11. Nombre del grupo (solo presentación) ─────────────────────────────────
+
+    public function test_group_name_is_hidden_when_activity_has_a_single_group_in_view(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $student] = $this->createFamilyUser();
+        ['group' => $group] = $this->createGroupOnMonday('Actividad Única', ['name' => 'Grupo Solitario']);
+        $this->enroll($student, $family, $group, EnrollmentStatus::Enrolled);
+
+        $this->actingAs($user)
+            ->get(route('familia.calendar', ['week' => $this->monday->format('Y-m-d')]))
+            ->assertOk()
+            ->assertSee('Actividad Única')
+            ->assertViewHas('groupNameActivityIds', [])
+            ->assertDontSee('Grupo Solitario');
+    }
+
+    public function test_group_name_is_shown_when_same_activity_has_two_groups_in_view(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $student] = $this->createFamilyUser();
+        ['activity' => $activity, 'group' => $groupA] = $this->createGroupOnMonday('Actividad Doble', ['name' => 'Grupo Mañana']);
+        $groupB = ActivityGroup::factory()->create([
+            'activity_id' => $activity->id,
+            'name' => 'Grupo Tarde',
+            'weekdays' => [2],
+            'starts_at' => '17:00:00',
+            'ends_at' => '18:00:00',
+            'effective_from' => null,
+            'effective_until' => null,
+        ]);
+        $this->enroll($student, $family, $groupA, EnrollmentStatus::Enrolled);
+        $this->enroll($student, $family, $groupB, EnrollmentStatus::Enrolled);
+
+        $this->actingAs($user)
+            ->get(route('familia.calendar', ['week' => $this->monday->format('Y-m-d')]))
+            ->assertOk()
+            ->assertViewHas('groupNameActivityIds', [$activity->id])
+            ->assertSee('Grupo Mañana')
+            ->assertSee('Grupo Tarde');
+    }
+
+    public function test_group_name_depends_on_the_selected_student_context(): void
+    {
+        ['user' => $user, 'family' => $family, 'student' => $student] = $this->createFamilyUser();
+        $sibling = Student::factory()->create(['family_id' => $family->id, 'is_active' => true]);
+
+        ['activity' => $activity, 'group' => $groupA] = $this->createGroupOnMonday('Actividad Doble', ['name' => 'Grupo Mañana']);
+        $groupB = ActivityGroup::factory()->create([
+            'activity_id' => $activity->id,
+            'name' => 'Grupo Tarde',
+            'weekdays' => [2],
+            'starts_at' => '17:00:00',
+            'ends_at' => '18:00:00',
+            'effective_from' => null,
+            'effective_until' => null,
+        ]);
+        $this->enroll($student, $family, $groupA, EnrollmentStatus::Enrolled);
+        $this->enroll($sibling, $family, $groupB, EnrollmentStatus::Enrolled);
+
+        // Each child alone only sees one group of the activity, so no disambiguation is needed.
+        $this->actingAs($user)
+            ->get(route('familia.calendar', ['week' => $this->monday->format('Y-m-d'), 'student' => $student->id]))
+            ->assertOk()
+            ->assertViewHas('groupNameActivityIds', [])
+            ->assertDontSee('Grupo Mañana');
+
+        // Viewing everyone, the two groups of the same activity do coexist.
+        $this->actingAs($user)
+            ->get(route('familia.calendar', ['week' => $this->monday->format('Y-m-d')]))
+            ->assertOk()
+            ->assertViewHas('groupNameActivityIds', [$activity->id]);
+    }
+
     public function test_timetable_offsets_stay_within_visible_range_bounds(): void
     {
         ['user' => $user, 'family' => $family, 'student' => $student] = $this->createFamilyUser();

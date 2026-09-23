@@ -47,6 +47,7 @@ class CalendarController extends Controller
                 'studentColors' => [],
                 'days' => [],
                 'notices' => collect(),
+                'groupNameActivityIds' => [],
                 'timeRange' => null,
                 'timetable' => null,
                 'prevWeekParam' => null,
@@ -79,6 +80,14 @@ class CalendarController extends Controller
         $sessions = $sessions->sortBy(fn ($s) => $s->date->format('Y-m-d').$s->startsAt)->values();
 
         $notices = $this->cancelledNotices($enrollments, $weekStart, $weekEnd);
+
+        // Presentation only: the group name is shown on a session just when the
+        // same activity has more than one group among the visible sessions.
+        $groupNameActivityIds = $sessions
+            ->groupBy('activityId')
+            ->filter(fn (Collection $group) => $group->pluck('activityGroupId')->unique()->count() > 1)
+            ->keys()
+            ->all();
 
         $sessionsByDate = $sessions->groupBy(fn ($s) => $s->date->format('Y-m-d'));
 
@@ -121,6 +130,7 @@ class CalendarController extends Controller
             'studentColors' => $studentColors,
             'days' => $days,
             'notices' => $notices,
+            'groupNameActivityIds' => $groupNameActivityIds,
             'timeRange' => $timeRange,
             'timetable' => $timetable,
             'prevWeekParam' => $weekStart->subWeek()->format('Y-m-d'),
