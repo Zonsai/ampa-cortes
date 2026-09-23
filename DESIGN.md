@@ -34,8 +34,8 @@ El proyecto tiene **tres contextos con tono distinto**, no un único registro pa
 
 | Área | Tono | Notas |
 |---|---|---|
-| **Público** (`/`) | Más expresivo, editorial y comunitario. Composición menos rígida, mayor contraste tipográfico, superficies cálidas puntuales, fotografía/ilustración real cuando exista el asset. Debe transmitir colegio y comunidad, no software. | Ver §26 Home para la dirección aprobada (documentada, pendiente de implementar). |
-| **Familias** (`/familia`) | Más calmado y funcional. Prioriza comprensión inmediata, accesibilidad y tareas (pendientes, hijos/as, horarios, formularios, consentimientos). Puede tener personalidad, nunca a costa de usabilidad. | Ver §27 Familias. |
+| **Público** (`/`) | Más expresivo, editorial y comunitario. Composición menos rígida, mayor contraste tipográfico, superficies cálidas puntuales, fotografía/ilustración real cuando exista el asset. Debe transmitir colegio y comunidad, no software. | Ver §26 Home — implementada. |
+| **Familias** (`/familia`) | Más calmado y funcional. Prioriza comprensión inmediata, accesibilidad y tareas (pendientes, hijos/as, horarios, formularios, consentimientos). Puede tener personalidad, nunca a costa de usabilidad. | Ver §27 Familias — implementado. |
 | **Admin** (`/admin`) | Filament 4, operativo. **Fuera del alcance de este rediseño visual** — no se toca su tema. Solo comparte los tokens de marca configurables (§3.1) a través de `AppSettings`. | Sin cambios previstos. |
 
 ## 3. Paleta y tokens semánticos
@@ -188,7 +188,7 @@ Ya existe una escala sutil y correcta — es una fortaleza a conservar tal cual:
 --shadow-2: 0 6px 18px rgba(16,24,40,.09);                              /* hover / elevado */
 ```
 
-**Regla:** máximo 2 niveles. Nunca sombras duras (`box-shadow: 4px 4px 0 #000`, estilo neobrutalismo) ni sombras de color saturado. Nunca `backdrop-filter: blur()` como recurso decorativo (ver §16 Don't — el header público actual lo usa y se recomienda retirarlo).
+**Regla:** máximo 2 niveles. Nunca sombras duras (`box-shadow: 4px 4px 0 #000`, estilo neobrutalismo) ni sombras de color saturado. Nunca `backdrop-filter: blur()` como recurso decorativo (ver §16 Don't) — el header público no lo usa (`background: rgba(255,255,255,.96)` plano).
 
 ## 10. Botones
 
@@ -241,7 +241,7 @@ El sistema `.family-status-badge` + modificadores (`.status-success`, `.status-w
 
 ## 16. Navegación
 
-- Público: barra superior con marca + navegación horizontal + acciones (`Acceso familias`, `Gestión AMPA`) + menú móvil por `<details>`/checkbox CSS (sin JS). Mantener el patrón, pero ver §20 sobre el `backdrop-filter`.
+- Público: barra superior con marca + navegación horizontal + acciones (`Acceso familias`, `Gestión AMPA`) + menú móvil por checkbox CSS (sin JS), enfocable por teclado. Mantener el patrón — ver §9 sobre `backdrop-filter`.
 - Familias: barra superior + pestañas horizontales con scroll (`family-nav`), estado activo por color + borde inferior, contador de pendientes en pestañas (`family-nav__count`). Correcto y accesible (no depende solo de color). Al añadir "Calendario" a esta nav (ya hecho en `feature/family-calendar`, sin tocar) se mantiene el mismo patrón — no requiere cambios de este sistema de diseño.
 - **Regla:** la navegación nunca cambia de patrón entre páginas de la misma zona. No mezclar tabs + sidebar + bottom nav.
 
@@ -274,7 +274,7 @@ Mobile-first ya aplicado de forma consistente (`@media (min-width: …)` para am
 ## 20. Accesibilidad
 
 - Contraste mínimo 4.5:1 para texto normal. Verificar especialmente `--color-ink-faint` (`#9ca3af`) sobre blanco — está en el límite y **no debe usarse para texto con información**, solo para elementos puramente decorativos (ya se usa así en `.family-empty-state__title` complementado con negro/gris oscuro para el título).
-- El foco visible ya existe en inputs (`.family-input:focus`) pero **falta en enlaces y botones** de ambos layouts — no hay ningún `:focus-visible` definido fuera de los campos de formulario. Es el hueco de accesibilidad más importante detectado (ver §21 diagnóstico).
+- Foco visible: `:focus-visible` global en enlaces, botones y chips de ambos layouts, además del halo ya existente en `.family-input:focus` — ver §21.
 - Los iconos decorativos junto a texto visible deben llevar `aria-hidden="true"`; los iconos-botón sin texto necesitan `aria-label`.
 - Ningún estado se comunica solo por color (ya cumplido, mantener).
 
@@ -302,7 +302,9 @@ Esto reutiliza literalmente el halo que ya existe en `.family-input:focus` pero 
 
 ## 23. Calendario semanal
 
-### 23.1 Ya implementado (real, en `feature/family-calendar`, sin fusionar todavía)
+### 23.1 Base del calendario — en `main`
+
+Implementado en `feature/family-calendar` y ya fusionado a `main`. El refinamiento visual sobre esta base (§23.2) es lo que vive actualmente en `feature/visual-refresh`, sin fusionar todavía.
 
 - Consume `ScheduledSessionCalculator` sin duplicar lógica de recurrencia — correcto, no tocar.
 - Excepciones `Modified` inline con indicación discreta + motivo; `Cancelled` como aviso separado en "Avisos de esta semana", nunca como sesión — correcto, coincide con §18 (feedback claro, sin ruido).
@@ -337,9 +339,9 @@ Además, en la misma pasada: eje horario realineado con la cabecera de cada día
 
 ### Don't
 - **No** reintroducir el violeta como color principal — la identidad definitiva es petróleo + terracota (§3.1). Un componente nuevo que necesite un color de marca usa `--brand-primary`/`--brand-secondary`, nunca un hex de violeta.
-- **No** usar emoji como icono estructural (sustituir 🎨📝✅📣☰ del front público en la fase de aplicación).
-- **No** usar `backdrop-filter: blur()` decorativo (retirar del `.pub-header` en la fase de aplicación).
-- **No** apilar más de un degradado por página (hoy el hero público y el CTA público llevan degradado cada uno — simplificar a uno, preferiblemente el CTA, y dejar el hero en color plano o con un único detalle de acento).
+- **No** usar emoji como icono estructural — usar SVG inline lineal (§22).
+- **No** usar `backdrop-filter: blur()` decorativo.
+- **No** apilar más de un degradado por página.
 - **No** anidar una tarjeta dentro de otra tarjeta — usar filas con separador.
 - **No** subir el radio de esquina por encima de 16px — evita la lectura "claymorphism"/infantil.
 - **No** usar colores saturados de más de un acento por componente (un badge no lleva fondo Y texto Y borde todos de colores distintos).
@@ -367,15 +369,15 @@ Cada fase es un commit/rama independiente y pequeña, siguiendo la convención y
 
 ## 26. Home pública — implementada
 
-Diagnóstico original: la Home era correcta pero demasiado parecida a una landing SaaS (hero + 4 tarjetas idénticas + tablón + CTA con degradado). Dirección aplicada en la Fase 8 (`resources/views/public/home.blade.php` + layout público), verificada con `HomepageTest.php` y QA visual a 375/768/1280px:
+Diagnóstico original: la Home era demasiado parecida a una landing SaaS (hero + 4 tarjetas idénticas + tablón + CTA con degradado). Estado real implementado en `resources/views/public/home.blade.php` + layout público, verificado con `HomepageTest.php` y QA visual a 375/768/1280px:
 
-- **Header**: un único CTA primario ("Acceso familias"); "Gestión AMPA" baja a enlace de texto — hoy hay dos botones `--primary` compitiendo (header + hero), viola la regla de §10 ("un único botón primario por pantalla").
-- **Hero asimétrico**: titular con más contraste tipográfico (más grande, más peso, sin cambiar de fuente — ver §4). El panel lateral deja de ser un checklist de emoji sobre degradado y pasa a un módulo de "prueba de comunidad": cifras reales del curso (marcadas `[Nº]` hasta tener el dato) + una cita real de una familia o de la junta (placeholder explícito hasta recopilarla, nunca inventada).
-- **"Qué ofrecemos"**: deja de ser un grid de 4 tarjetas idénticas (ver Don't de §24). Pasa a una composición editorial: un ítem destacado + 3 filas compactas con icono, sin tarjeta individual por ítem.
-- **Nueva sección "Quiénes somos"**: no existe hoy. Texto breve sobre la propia comunidad + hueco de fotografía real marcado explícitamente como pendiente (`[FOTO — pendiente de asset real]`) — nunca stock genérico.
-- **Anuncios**: el fijado gana tratamiento destacado; el resto pasa a filas compactas en vez de tarjetas repetidas — mismo patrón fila-con-separador que ya usa la zona familiar (§14).
-- **CTA final**: un solo panel de color plano cálido (`--surface-warm`), sin degradado; un único botón, el resto como enlace de texto.
-- **Iconografía**: sustituir los emoji por los SVG lineales de §22, coloreados con propósito (`--brand-primary` / `--brand-secondary` / `--brand-warm` según el caso, nunca los cuatro iguales).
+- **Header**: un único CTA primario ("Acceso familias"); "Gestión AMPA" es un enlace de texto (`.pub-link-quiet`) — cumple la regla de §10 ("un único botón primario por pantalla").
+- **Hero editorial**: dos columnas (`.pub-hero__grid`, 1.15fr/.85fr desde 860px). Izquierda: eyebrow + `h1` + `.pub-lead` + par de CTA (primario "Acceso familias", ghost "Conoce el AMPA"). Derecha, **panel de comunidad** (`.pub-hero__community`): icono + etiqueta "Comunidad educativa" + un párrafo + una lista de 3 afirmaciones reales con icono de check (p. ej. "Gestión abierta y cercana con las familias") — sin cifras ni citas, ninguna de las dos se implementó finalmente.
+- **"Qué ofrecemos"** (`.pub-offer`): ya no es un grid de 4 tarjetas idénticas. Es un ítem destacado (Extraescolares, con icono + texto + enlace) más una lista de 3 filas compactas con icono (Formularios, Consentimientos, Comunicación), sin tarjeta individual por fila.
+- **Sección "El AMPA"** (teaser, eyebrow "Quiénes somos"): dos columnas — hueco de fotografía marcado explícitamente como pendiente ("Fotografía de la comunidad del AMPA — pendiente de asset real", con icono SVG, nunca stock genérico) + texto breve sobre la comunidad + enlace a `/ampa`.
+- **Anuncios**: si hay un anuncio fijado, se muestra destacado (`.pub-ann-featured`) y el resto en filas compactas (`.pub-ann-row`, patrón fila-con-separador de §14); si no hay ninguno fijado, todos se listan como filas compactas.
+- **CTA final**: un solo panel de color plano cálido (`.pub-cta--flat`, `--surface-warm`), sin degradado; un único botón primario, el resto como enlace de texto.
+- **Iconografía**: SVG lineales en todo el bloque, coloreados con propósito (`--brand-primary` para el check del panel de comunidad y los iconos de "Qué ofrecemos" destacado/"El AMPA"; `--brand-accent` en las filas de "Qué ofrecemos"; `--brand-warm` solo en el icono del pin "Destacado").
 
 ## 27. Familias — implementado
 
