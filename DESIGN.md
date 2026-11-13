@@ -80,7 +80,7 @@ El violeta queda **retirado** como color principal recomendado. Identidad aproba
 --border:       #dee4e1;
 ```
 
-Estos nombres son los definitivos y sustituyen a `--color-surface-sunken`/`--color-ink`/`--color-ink-muted`/`--color-border` de un borrador anterior de este documento — mismo significado y misma regla de declarar una sola vez (ver §25 Fase 0), solo cambia el nombre final. Declarar en un partial compartido, no duplicar en cada `<style>` de layout.
+Estos son los nombres objetivo del contrato y sustituyen a los de un borrador anterior de este documento (`--color-surface-sunken`, `--color-ink`, `--color-ink-muted`, `--color-border`, que ya no deben usarse). **Aún no están cableados en el CSS real:** cada layout sigue declarando sus propios tokens (`--pub-*` en el público, `--fam-*` en familias, p. ej. `--fam-border: #e5e7eb`). Se declararán una sola vez en un partial compartido cuando se implemente la Fase 0 (§25); hasta entonces, usar los tokens existentes de cada layout.
 
 ### 3.4 Estado (sin cambios — independientes de la identidad)
 
@@ -177,7 +177,7 @@ Se unifica `--pub-radius: 16px` y `--fam-radius: 14px` a un único valor medio (
 
 ## 8. Bordes
 
-Un solo estilo en todo el proyecto: `1px solid var(--color-border)` (`#e5e7eb`). No se usan bordes gruesos (3–4px) ni de color saturado — eso pertenece a estilos tipo claymorphism/brutalism, fuera de la dirección elegida. Los bordes con color de marca (`color-mix(in srgb, var(--brand-primary) 40%, var(--pub-border))`) se reservan para estados de *hover* puntuales, no para el estado de reposo.
+Un solo estilo en todo el proyecto: `1px solid var(--border)` (hoy implementado como `--fam-border`/`--pub-border`, `#e5e7eb`). No se usan bordes gruesos (3–4px) ni de color saturado — eso pertenece a estilos tipo claymorphism/brutalism, fuera de la dirección elegida. Los bordes con color de marca (`color-mix(in srgb, var(--brand-primary) 40%, var(--pub-border))`) se reservan para estados de *hover* puntuales, no para el estado de reposo.
 
 ## 9. Sombras / elevación
 
@@ -197,12 +197,12 @@ Ya existe un sistema coherente entre zonas (`.pub-btn` / `.family-btn`) — form
 | Variante | Fondo | Texto | Uso |
 |---|---|---|---|
 | Primario | `var(--brand-primary)` | blanco | una sola acción principal por vista |
-| Ghost/secundario | blanco, borde `--color-border` | `--color-ink` | acciones secundarias |
+| Ghost/secundario | blanco, borde `--border` | `--ink` | acciones secundarias |
 | Muted | `#f3f4f6` | `#374151` | acciones terciarias, "Esta semana" |
 | Warning | `--color-warning-bg` | `--color-warning` | acciones de baja severidad con matiz |
 | Danger | `--color-danger-bg` | `--color-danger` | cancelar, dar de baja |
 
-Tamaño táctil mínimo: **44×44px de área de toque** en móvil (ya se cumple con `padding: 9px 16px` + `font-size: .88rem`, verificar en cada componente nuevo). Radio `--radius-sm`. Un único botón primario por pantalla/sección — no dos CTAs primarios compitiendo.
+Tamaño táctil mínimo: **44×44px de área de toque** en móvil (ya se cumple con `padding: 9px 16px` + `font-size: .88rem`, verificar en cada componente nuevo). Radio `--radius-sm`. No hay acciones primarias compitiendo dentro del mismo contexto o sección: cada bloque (cabecera, hero, panel, CTA final) tiene como mucho un botón primario. La misma acción (p. ej. "Acceso familias") puede repetirse en contextos distintos, como la cabecera y el hero de la Home.
 
 ## 11. Enlaces
 
@@ -211,7 +211,7 @@ Tamaño táctil mínimo: **44×44px de área de toque** en móvil (ya se cumple 
 
 ## 12. Tarjetas
 
-Un único nivel de tarjeta: fondo blanco, borde `1px solid var(--color-border)`, radio `--radius-md`, `--shadow-1`. **Regla dura pedida explícitamente: nunca una tarjeta dentro de otra tarjeta.** Si un bloque necesita subdivisión interna, se usa una fila con separador (`border-top: 1px solid #f4f4f5`, patrón ya usado en `.family-row + .family-row`), no una tarjeta anidada.
+Un único nivel de tarjeta: fondo blanco, borde `1px solid var(--border)`, radio `--radius-md`, `--shadow-1`. **Regla dura pedida explícitamente: nunca una tarjeta dentro de otra tarjeta.** Si un bloque necesita subdivisión interna, se usa una fila con separador (`border-top: 1px solid #f4f4f5`, patrón ya usado en `.family-row + .family-row`), no una tarjeta anidada.
 
 Los iconos decorativos dentro de tarjeta (`.pub-card__icon`, círculo de color relleno) se mantienen pero se simplifican: un solo tono por icono (no relleno saturado), y se sustituye el emoji actual por SVG lineal (ver §15).
 
@@ -273,7 +273,7 @@ Mobile-first ya aplicado de forma consistente (`@media (min-width: …)` para am
 
 ## 20. Accesibilidad
 
-- Contraste mínimo 4.5:1 para texto normal. Verificar especialmente `--color-ink-faint` (`#9ca3af`) sobre blanco — está en el límite y **no debe usarse para texto con información**, solo para elementos puramente decorativos (ya se usa así en `.family-empty-state__title` complementado con negro/gris oscuro para el título).
+- Contraste mínimo 4.5:1 para texto normal. Verificar especialmente `--ink-faint` (`#9ca3af`) sobre blanco — está en el límite y **no debe usarse para texto con información**, solo para elementos puramente decorativos (ya se usa así en `.family-empty-state__title` complementado con negro/gris oscuro para el título).
 - Foco visible: `:focus-visible` global en enlaces, botones y chips de ambos layouts, además del halo ya existente en `.family-input:focus` — ver §21.
 - Los iconos decorativos junto a texto visible deben llevar `aria-hidden="true"`; los iconos-botón sin texto necesitan `aria-label`.
 - Ningún estado se comunica solo por color (ya cumplido, mantener).
@@ -346,7 +346,7 @@ Además, en la misma pasada: eje horario realineado con la cabecera de cada día
 - **No** subir el radio de esquina por encima de 16px — evita la lectura "claymorphism"/infantil.
 - **No** usar colores saturados de más de un acento por componente (un badge no lleva fondo Y texto Y borde todos de colores distintos).
 - **No** instalar una fuente de Google Fonts ni una librería de iconos vía npm — todo vive en el `<style>` de cada layout o en SVG inline.
-- **No** duplicar tokens: cualquier valor nuevo se añade al partial compartido descrito en §25, no a un `<style>` de layout suelto.
+- **No** inventar tokens ni hex sueltos: reutilizar los existentes de cada layout (`--brand-*`, `--pub-*`, `--fam-*`) y mantener cualquier valor nuevo coherente entre ambos. Cuando se implemente la Fase 0 (§25), los tokens compartidos pasarán a un partial único.
 - **No** comunicar un estado solo con color sin texto o icono de apoyo.
 
 ## 25. Fases de aplicación recomendadas
@@ -371,7 +371,7 @@ Cada fase es un commit/rama independiente y pequeña, siguiendo la convención y
 
 Diagnóstico original: la Home era demasiado parecida a una landing SaaS (hero + 4 tarjetas idénticas + tablón + CTA con degradado). Estado real implementado en `resources/views/public/home.blade.php` + layout público, verificado con `HomepageTest.php` y QA visual a 375/768/1280px:
 
-- **Header**: un único CTA primario ("Acceso familias"); "Gestión AMPA" es un enlace de texto (`.pub-link-quiet`) — cumple la regla de §10 ("un único botón primario por pantalla").
+- **Header**: un único CTA primario ("Acceso familias"); "Gestión AMPA" es un enlace de texto (`.pub-link-quiet`) — no compite con otra acción primaria dentro de la cabecera (§10). "Acceso familias" se repite como botón primario del hero, que es un contexto distinto.
 - **Hero editorial**: dos columnas (`.pub-hero__grid`, 1.15fr/.85fr desde 860px). Izquierda: eyebrow + `h1` + `.pub-lead` + par de CTA (primario "Acceso familias", ghost "Conoce el AMPA"). Derecha, **panel de comunidad** (`.pub-hero__community`): icono + etiqueta "Comunidad educativa" + un párrafo + una lista de 3 afirmaciones reales con icono de check (p. ej. "Gestión abierta y cercana con las familias") — sin cifras ni citas, ninguna de las dos se implementó finalmente.
 - **"Qué ofrecemos"** (`.pub-offer`): ya no es un grid de 4 tarjetas idénticas. Es un ítem destacado (Extraescolares, con icono + texto + enlace) más una lista de 3 filas compactas con icono (Formularios, Consentimientos, Comunicación), sin tarjeta individual por fila.
 - **Sección "El AMPA"** (teaser, eyebrow "Quiénes somos"): dos columnas — hueco de fotografía marcado explícitamente como pendiente ("Fotografía de la comunidad del AMPA — pendiente de asset real", con icono SVG, nunca stock genérico) + texto breve sobre la comunidad + enlace a `/ampa`.
