@@ -237,6 +237,38 @@ class UserResourceTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_user_policy_lets_junta_edit_non_super_admin_users_only(): void
+    {
+        $junta = $this->createUser('junta_ampa');
+        $familyUser = $this->createUser('familia');
+
+        $this->assertTrue($junta->can('update', $familyUser));
+        $this->assertTrue($junta->can('update', $junta));
+        $this->assertFalse($junta->can('update', $this->superAdmin));
+        $this->assertTrue($this->superAdmin->can('update', $this->superAdmin));
+    }
+
+    public function test_user_policy_restricts_deleting_users_to_super_admin(): void
+    {
+        $junta = $this->createUser('junta_ampa');
+        $familyUser = $this->createUser('familia');
+
+        $this->assertFalse($junta->can('delete', $familyUser));
+        $this->assertFalse($junta->can('deleteAny', User::class));
+        $this->assertTrue($this->superAdmin->can('delete', $familyUser));
+        $this->assertTrue($this->superAdmin->can('deleteAny', User::class));
+    }
+
+    public function test_user_policy_denies_other_roles_any_access(): void
+    {
+        $extra = $this->createUser('admin_extraescolares');
+
+        $this->assertFalse($extra->can('viewAny', User::class));
+        $this->assertFalse($extra->can('view', $this->superAdmin));
+        $this->assertFalse($extra->can('create', User::class));
+        $this->assertFalse($extra->can('update', $extra));
+    }
+
     public function test_cannot_deactivate_last_super_admin(): void
     {
         // Only one super_admin exists (setUp)

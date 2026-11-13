@@ -13,7 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 
 class UserResource extends Resource
 {
@@ -40,30 +39,6 @@ class UserResource extends Resource
     public static function canAccess(): bool
     {
         return auth()->user()?->hasAnyRole(['super_admin', 'junta_ampa']) ?? false;
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        $actor = auth()->user();
-        if (! $actor) {
-            return false;
-        }
-        // junta_ampa cannot edit super_admin users
-        if ($record->hasRole('super_admin') && ! $actor->hasRole('super_admin')) {
-            return false;
-        }
-
-        return parent::canEdit($record);
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        $actor = auth()->user();
-        if (! $actor?->hasRole('super_admin')) {
-            return false;
-        }
-
-        return parent::canDelete($record);
     }
 
     public static function form(Schema $schema): Schema
