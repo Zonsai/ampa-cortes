@@ -1,6 +1,6 @@
 # Guía de despliegue — Portal AMPA
 
-Instrucciones para desplegar este proyecto Laravel 12 en un servidor Plesk con PHP 8.3 y MySQL.
+Instrucciones para desplegar este proyecto Laravel 13 en un servidor Plesk con PHP 8.5 y MySQL.
 
 ---
 
@@ -8,7 +8,7 @@ Instrucciones para desplegar este proyecto Laravel 12 en un servidor Plesk con P
 
 ### PHP
 
-- **PHP 8.3** (mínimo)
+- **PHP 8.5** (mínimo; `composer.json` declara `"php": "^8.5"`)
 - Extensiones requeridas:
   - `pdo_mysql`
   - `mbstring`

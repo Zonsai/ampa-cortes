@@ -304,7 +304,7 @@ Esto reutiliza literalmente el halo que ya existe en `.family-input:focus` pero 
 
 ### 23.1 Base del calendario — en `main`
 
-Implementado en `feature/family-calendar` y ya fusionado a `main`. El refinamiento visual sobre esta base (§23.2) es lo que vive actualmente en `feature/visual-refresh`, sin fusionar todavía.
+Implementado en `feature/family-calendar` y fusionado a `main`. El refinamiento visual posterior (§23.2) se desarrolló en `feature/visual-refresh`, también fusionada a `main`.
 
 - Consume `ScheduledSessionCalculator` sin duplicar lógica de recurrencia — correcto, no tocar.
 - Excepciones `Modified` inline con indicación discreta + motivo; `Cancelled` como aviso separado en "Avisos de esta semana", nunca como sesión — correcto, coincide con §18 (feedback claro, sin ruido).
@@ -316,7 +316,7 @@ Implementado en `feature/family-calendar` y ya fusionado a `main`. El refinamien
 
 ### 23.2 Refinamiento visual — implementado
 
-Los tres puntos diagnosticados sobre el timetable ya construido quedaron implementados en `feature/visual-refresh` (commit `feat(familia): refinar la lectura del calendario semanal`), sin tocar `ScheduledSessionCalculator` ni la lógica de solapamiento:
+Los tres puntos diagnosticados sobre el timetable ya construido quedaron implementados en `main` (rama `feature/visual-refresh`, commit `feat(familia): refinar la lectura del calendario semanal`), sin tocar `ScheduledSessionCalculator` ni la lógica de solapamiento:
 
 1. **Contenedor propio, más ancho.** `.family-cal-page` usa `width: min(1360px, 100vw − 48px)` desde 1100px de viewport, centrado de forma independiente de `.family-container` (que no cambia). Por debajo de 1100px usa el ancho normal de la zona familiar.
 2. **Información mínima por sesión.** Cada tarjeta muestra hora + actividad + hijo/a (punto de color + nombre) + ubicación cuando cabe. El nombre del grupo (`CalendarController::$groupNameActivityIds`, dato de presentación calculado por semana/filtro de hijo/a visible) solo se muestra cuando dos grupos de la misma actividad conviven en la vista actual — cubierto por 3 tests dedicados en `FamilyCalendarTest.php`.
