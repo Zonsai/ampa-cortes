@@ -80,9 +80,16 @@ Todos con modelo, migración, Filament resource (cuando aplica), policy y tests.
   - Paleta de 6 colores por hijo/a (identidad de alumno/a, independiente de la marca — ver `DESIGN.md` §3.5).
   - Cubierto por 22 tests en `tests/Feature/FamilyCalendarTest.php` (acceso, filtros, navegación, excepciones, cálculo del timetable, nombre de grupo por contexto).
 
+- **Exportación `.ics` (descarga estática)** — `GET /familia/calendario/exportar` (`familia.calendar.export`, `Familia\CalendarExportController` + `App\Services\CalendarIcsExporter`). Botón "Exportar calendario" en la barra del calendario.
+  - Rango: curso académico activo completo; sesiones de la familia desde `ScheduledSessionCalculator` (sin recurrencias propias): canceladas excluidas, modificadas en su fecha/hora/ubicación final, extras incluidas, respeta `attendance_from/until` y el rango efectivo del grupo. Mismas inscripciones que el calendario (`Enrollment::scopeInFamilyCalendar`: inscrito, pendiente de pago, pagado).
+  - `?student=ID` exporta solo ese hijo/a; un id inexistente, no numérico o de otra familia devuelve 404. Sin curso activo: 404. Sin sesiones: VCALENDAR válido vacío.
+  - RFC 5545: CRLF, escape de `\ ; ,` y saltos de línea, line folding a 75 octetos sin partir UTF-8, `Europe/Madrid` con `VTIMEZONE` (DST resuelto por el cliente, no UTC fijo), `UID` estable `enrollment-{id}-{Ymd}[-extra-{HHmm}]@ampa-cortes.local` (`ScheduledSession::uid()`).
+  - Es un **fichero descargado una vez**: no se actualiza solo. Una sesión movida cambia de fecha y por tanto de UID (al reimportar queda el evento antiguo).
+  - Cubierto por `tests/Feature/FamilyCalendarIcsExportTest.php` y `tests/Unit/CalendarIcsExporterTest.php`.
+
 **NO existe todavía**:
 
-- Exportación `.ics`.
+- **Suscripción `webcal://`/URL de calendario que se mantenga actualizada** (requeriría un token por familia revocable, ruta pública sin sesión y gestión de `SEQUENCE`/cancelaciones). La descarga `.ics` actual no es sincronización. Tampoco hay OAuth ni Google Calendar API.
 - Asistencia real (pase de lista por sesión). `attendance_from/until` es un **periodo de vigencia**, no un registro de asistencia por clase.
 - Integración GIR.
 
@@ -124,7 +131,7 @@ Acciones principales (`app/Actions/Enrollments/`):
 
 ## 8. Próximas fases recomendadas (no implementadas)
 
-- Exportación `.ics`.
+- Suscripción `webcal` del calendario (la descarga `.ics` ya existe).
 - Integración GIR.
 - Importadores (de datos existentes, matrícula, etc.).
 - Banco de libros.
@@ -144,7 +151,7 @@ npm install && npm run build   # o npm run dev / composer run dev para todo junt
 - **Seeders solo en entorno `local`**: `AdminUserSeeder` (usuario demo `admin@ampa.test` / `password`, rol `super_admin`), `DemoDataSeeder` (datos de ejemplo). Hay además `LocalDemoSeeder` para enriquecer datos de demo/QA visual — también restringido a `local`.
 - **Producción**: crear el primer admin con `php artisan ampa:create-admin` (`App\Console\Commands\CreateAdminCommand`); `AdminUserSeeder` se niega a ejecutarse fuera de `local`.
 - **Panel admin**: `/admin`. **Zona familiar**: `/familia`. **Front público**: `/`.
-- **Tests**: `php artisan test --compact` (659 tests / 1759 aserciones pasando a fecha de este documento, sin deprecations, incluye los 22 de `FamilyCalendarTest.php`; DB SQLite en memoria vía `phpunit.xml`; requiere PHP 8.5 con `pdo_sqlite`). Para un archivo: `php artisan test --compact tests/Feature/NombreTest.php`. Para un test concreto: `php artisan test --compact --filter=nombreTest`.
+- **Tests**: `php artisan test --compact` (700 tests / 2121 aserciones pasando a fecha de este documento, sin deprecations, incluye los 22 de `FamilyCalendarTest.php`; DB SQLite en memoria vía `phpunit.xml`; requiere PHP 8.5 con `pdo_sqlite`). Para un archivo: `php artisan test --compact tests/Feature/NombreTest.php`. Para un test concreto: `php artisan test --compact --filter=nombreTest`.
 - **Entorno PHP 8.5 en Windows/Laragon**: `composer.json` exige PHP `^8.5` y `vendor/autoload.php` aborta con una versión inferior. Laragon/Apache sirve el proyecto en `http://ampa-cortes.test` con PHP 8.5.12 TS (build Thread Safe, necesaria para `mod_php`; las builds NTS solo sirven para CLI), con su propio `php.ini` (extensiones activas: `curl, fileinfo, gd, intl, mbstring, mysqli, openssl, pdo_mysql, pdo_sqlite, sqlite3, zip`). El vhost lo genera Laragon a partir de una junction local `C:/laragon/www/ampa-cortes` hacia el proyecto (el repo vive fuera de `www`). La terminal propia de Laragon resuelve PHP 8.5.12 y su Composer aislado (2.11.2). **El PATH global de Windows no se ha cambiado** a propósito (para que otros proyectos de Laragon sigan pudiendo usar PHP 8.3 u otras versiones): una shell normal de Windows puede seguir resolviendo PHP 8.3.16, donde `php artisan` aborta por el platform check. Esto afecta a herramientas externas que lanzan `php` desde el PATH (p. ej. Boost/MCP vía `.mcp.json`, que está versionado y no debe llevar rutas absolutas locales), pero no a la aplicación servida por Laragon. Para ejecutar artisan/tests/Composer desde una shell normal, usar la terminal de Laragon o anteponer el PHP 8.5 en el PATH solo de esa sesión.
 - **Formato de código**: `vendor/bin/pint --dirty --format agent` tras tocar PHP.
 
