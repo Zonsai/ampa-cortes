@@ -8,20 +8,25 @@ Instrucciones para desplegar este proyecto Laravel 13 en un servidor Plesk con P
 
 ### PHP
 
-- **PHP 8.5** (mínimo; `composer.json` declara `"php": "^8.5"`)
-- Extensiones requeridas:
+- **PHP 8.5** (mínimo; `composer.json` declara `"php": "^8.5"`). No se asume que el `php` del PATH del servidor sea la versión correcta; hay que usar 8.5 en **todos** estos contextos:
+  - **PHP web (FPM/FastCGI)** del dominio: 8.5.
+  - **PHP CLI/SSH** para `artisan`: 8.5.
+  - **Cron** (y workers de cola, si se usan): invocados explícitamente con el binario de PHP 8.5.
+  - **Composer**: ejecutado bajo PHP 8.5 (`vendor/autoload.php` aborta con "PHP >= 8.5.0" si se instaló o se ejecuta con otra versión). Usar Composer 2.9 o superior (versiones anteriores emiten deprecations con PHP 8.5).
+  - En Plesk probablemente haya que llamar al binario 8.5 por su ruta completa. **La ruta concreta debe verificarse en el servidor real**; no está documentada aquí.
+- **Extensiones a comprobar explícitamente** (`php -m` con el PHP 8.5 de CLI y `phpinfo()` en el web), verificadas con `composer check-platform-reqs` sobre `composer.lock`:
   - `pdo_mysql`
   - `mbstring`
   - `openssl`
-  - `tokenizer`
-  - `xml`
-  - `ctype`
-  - `fileinfo`
-  - `bcmath`
-  - `zip` — requerida por maatwebsite/excel para las exportaciones
-  - `gd` o `imagick` — opcional, pero recomendada para exports Excel con imágenes
-  - `intl`
   - `curl`
+  - `fileinfo`
+  - `intl` — requerida por Filament
+  - `gd` — **obligatoria** (la exige PhpSpreadsheet 5, usado por Laravel Excel 4); `imagick` no la sustituye
+  - `zip` — exports Excel (PhpSpreadsheet/OpenSpout)
+  - `xml`, `dom`, `simplexml`, `xmlreader`, `xmlwriter`, `libxml` — exports Excel y PHPUnit (normalmente vienen incluidas; comprobar si el hosting usa una build mínima)
+- **Capacidades core** que normalmente vienen incluidas y solo hay que revisar en builds mínimas: `ctype`, `filter`, `hash`, `iconv`, `json`, `pcre`, `phar`, `session`, `tokenizer`, `zlib`.
+- `bcmath` **no** es requisito del stack (ningún paquete del `composer.lock` lo exige).
+- `pdo_sqlite`/`sqlite3` solo se necesitan para ejecutar los tests, no en producción.
 
 ### Base de datos
 
@@ -29,7 +34,7 @@ Instrucciones para desplegar este proyecto Laravel 13 en un servidor Plesk con P
 
 ### Herramientas en servidor
 
-- **Composer** (disponible en CLI)
+- **Composer** 2.9+ (disponible en CLI y ejecutado con PHP 8.5)
 - **Node.js / npm**: _opcional_ — solo necesario si se quiere compilar los assets directamente en el servidor. Ver sección [Assets](#assets--public-build) para las opciones recomendadas.
 
 ---
@@ -76,6 +81,21 @@ Hay tres estrategias posibles:
 4. Recomendada si el proyecto escala o hay múltiples entornos
 
 **Nota:** independientemente de la opción elegida, en producción nunca se deben instalar las `devDependencies` de npm ni ejecutar `npm run dev`.
+
+---
+
+## Livewire 4 y rutas dinámicas
+
+Filament 5 usa Livewire 4, que sirve su JS y sus peticiones por rutas dinámicas de Laravel, no por ficheros reales:
+
+- `/livewire-{hash}/livewire.js`
+- `/livewire-{hash}/update`
+
+Reglas de despliegue:
+
+- El `{hash}` **no debe hardcodearse** en reglas de nginx, WAF, CDN o caché; usar un patrón (`/livewire-*`) si hace falta una regla.
+- En Plesk/nginx hay que **verificar** que estas URLs llegan a Laravel y que una regla de "archivos estáticos" (servir `.js` directamente por nginx) no devuelve 404 para `livewire.js`.
+- No cachear `/livewire-*/update` ni responder a esas rutas desde CDN.
 
 ---
 
@@ -217,7 +237,7 @@ Si se usa el administrador de archivos de Plesk, asegurarse de que el propietari
 Checklist para cada actualización:
 
 - [ ] `git pull origin main` (o subir archivos modificados por SFTP)
-- [ ] `composer install --no-dev --optimize-autoloader`
+- [ ] `composer install --no-dev --optimize-autoloader` (con el PHP 8.5 y no con el `php` del PATH, salvo que se haya verificado que apunta a 8.5)
 - [ ] Subir/actualizar `public/build` si han cambiado assets CSS/JS
 - [ ] `php artisan migrate --force`
 - [ ] Limpiar y regenerar cachés:
@@ -358,6 +378,8 @@ Verificación obligatoria **antes** de abrir el portal a usuarios reales:
 - [ ] Al menos **un `super_admin` activo** (verificado con el comando del paso 9).
 
 **Pruebas humo en producción:**
+- [ ] **PHP:** el PHP web y el CLI/cron son 8.5 (`php -v` con el binario que usa el cron; versión visible en `phpinfo()` solo temporalmente).
+- [ ] **Livewire 4:** `/livewire-{hash}/livewire.js` responde 200 (sin 404 de archivos estáticos) y una acción Livewire del panel (p. ej. buscar en una tabla de `/admin`) responde 200 en `/livewire-{hash}/update`.
 - [ ] **Login admin** correcto en `/admin`.
 - [ ] **Login familia** correcto en `/familia/login`.
 - [ ] **Escritura en storage:** subir un logo desde el panel y verlo servido por `/storage/branding/...`.
