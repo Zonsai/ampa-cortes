@@ -10,7 +10,7 @@ Versiones reales instaladas (`composer show --direct`, 2026-11-13):
 
 | Componente | Versión |
 |---|---|
-| PHP | **8.5** — `composer.json` exige `^8.5`; desarrollo y tests con 8.5.12 (NTS) |
+| PHP | **8.5** — `composer.json` exige `^8.5`; desarrollo y tests con 8.5.12 TS (Thread Safe, el mismo que sirve Apache en Laragon) |
 | Laravel | 13.42.0 (`laravel/framework ^13.0`) |
 | Laravel Tinker | 3.1.0 |
 | Filament | 5.11.2 (`filament/filament ^5.0`) |
@@ -115,7 +115,7 @@ Acciones principales (`app/Actions/Enrollments/`):
 - No añadir paquetes/dependencias npm o Composer sin decisión explícita del usuario.
 - **Autorización en Filament vía Policy, no vía `Resource::canEdit()`/`canDelete()`**: al pasar de Filament 4.13.2 a 4.16.2 (y se mantiene en 5.x) las páginas de edición/borrado pasaron a autorizar con la policy (`authorizeEdit()` → Gate), por lo que sobreescribir `can*()` en el Resource solo afecta a la visibilidad de la UI, no protege la ruta. Toda regla de acceso por registro (p. ej. que `junta_ampa` no pueda editar a un `super_admin`) debe vivir en la policy (`app/Policies/UserPolicy.php`).
 - Mantener fases pequeñas y testeadas — cada módulo se ha añadido con su propia migración, tests y (si aplica) resource Filament, no en bloques grandes.
-- Convenciones de estructura Filament 4 (heredadas de memoria de sesiones previas, verificar si cambian):
+- Convenciones de estructura Filament (vigentes en Filament 5.11, comprobadas tras la migración desde la 4):
   - `app/Filament/Resources/{Plural}/{Model}Resource.php`
   - `.../Schemas/{Model}Form.php` (usa `Filament\Schemas\Schema`, no `Filament\Forms`)
   - `.../Tables/{Plural}Table.php`
