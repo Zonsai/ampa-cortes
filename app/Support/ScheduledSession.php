@@ -44,7 +44,7 @@ class ScheduledSession
     }
 
     /**
-     * @return string Stable UID suitable for future .ics export, scoped per enrollment.
+     * @return string Stable UID for the .ics export, scoped per enrollment (same session => same UID across exports).
      */
     public function uid(string $domain = 'ampa-cortes.local'): string
     {
@@ -52,6 +52,9 @@ class ScheduledSession
             ? "enrollment-{$this->enrollmentId}"
             : "group-{$this->activityGroupId}";
 
-        return "{$prefix}-{$this->date->format('Ymd')}@{$domain}";
+        // An extra session may share a day with the regular one, so it carries its own start time.
+        $suffix = $this->isExtra() ? '-extra-'.str_replace(':', '', substr($this->startsAt, 0, 5)) : '';
+
+        return "{$prefix}-{$this->date->format('Ymd')}{$suffix}@{$domain}";
     }
 }

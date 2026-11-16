@@ -73,6 +73,11 @@
                 @endforeach
             </div>
         @endif
+
+        <a href="{{ route('familia.calendar.export', $selectedStudentId ? ['student' => $selectedStudentId] : []) }}" class="family-cal-export">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 3.5v9M6.5 9.5L10 13l3.5-3.5M4 16h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Exportar calendario
+        </a>
     </div>
 
     @if($notices->isNotEmpty())

@@ -359,6 +359,10 @@
             .family-cal-navbtn { min-height: 40px; }
             .family-cal-navbtn__text { display: inline; }
         }
+        .family-cal-export { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--fam-border); border-radius: 10px; background: #fff; color: var(--fam-muted); font-size: .84rem; font-weight: 600; text-decoration: none; transition: border-color .15s, background .15s, color .15s; }
+        .family-cal-export:hover { border-color: #cbd5e1; background: #f9fafb; color: var(--fam-text); }
+        .family-cal-export svg { width: 16px; height: 16px; flex: 0 0 auto; }
+        @media (min-width: 560px) { .family-cal-export { min-height: 36px; } }
         .family-cal-students { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
         .family-cal-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; font-size: .84rem; font-weight: 600; padding: 0 14px; border-radius: 999px; background: #fff; color: var(--fam-text); border: 1px solid var(--fam-border); text-decoration: none; cursor: pointer; transition: border-color .15s, background .15s; }
         .family-cal-chip:hover { border-color: #cbd5e1; background: #f9fafb; }

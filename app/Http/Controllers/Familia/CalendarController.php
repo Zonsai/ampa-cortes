@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Familia;
 
-use App\Enums\EnrollmentStatus;
 use App\Enums\ExceptionType;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
@@ -62,11 +61,7 @@ class CalendarController extends Controller
 
         $enrollments = Enrollment::where('family_id', $family->id)
             ->where('academic_year_id', $activeYear->id)
-            ->whereIn('status', [
-                EnrollmentStatus::Enrolled->value,
-                EnrollmentStatus::PendingPayment->value,
-                EnrollmentStatus::Paid->value,
-            ])
+            ->inFamilyCalendar()
             ->when($selectedStudentId, fn ($q) => $q->where('student_id', $selectedStudentId))
             ->with(['student', 'activityGroup.activity', 'activityGroup.exceptions'])
             ->get();

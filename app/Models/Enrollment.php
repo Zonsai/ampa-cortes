@@ -6,6 +6,7 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PriceType;
 use Database\Factories\EnrollmentFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -50,6 +51,21 @@ class Enrollment extends Model
             'attendance_from' => 'date',
             'attendance_until' => 'date',
         ];
+    }
+
+    /**
+     * Enrollments whose sessions appear in the family calendar (and its .ics export).
+     *
+     * @param  Builder<Enrollment>  $query
+     * @return Builder<Enrollment>
+     */
+    public function scopeInFamilyCalendar(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            EnrollmentStatus::Enrolled->value,
+            EnrollmentStatus::PendingPayment->value,
+            EnrollmentStatus::Paid->value,
+        ]);
     }
 
     public function student()
